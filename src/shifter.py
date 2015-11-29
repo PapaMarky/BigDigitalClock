@@ -1,22 +1,32 @@
 import RPi.GPIO as GPIO
 import time
 
+#GPIO.setwarnings(False)
+
 GPIO.setmode(GPIO.BCM)
-PIN_DATA  = 16
-PIN_LATCH = 21
-PIN_CLOCK = 20
-GPIO.setup(PIN_DATA,  GPIO.OUT)
-GPIO.setup(PIN_LATCH, GPIO.OUT)
-GPIO.setup(PIN_CLOCK, GPIO.OUT)
 
-def shiftout(byte):
-  GPIO.output(PIN_LATCH, 0)
-  for x in range(8):
-    GPIO.output(PIN_DATA, (byte >> x) & 1)
-    GPIO.output(PIN_CLOCK, 1)
-    GPIO.output(PIN_CLOCK, 0)
-  GPIO.output(PIN_LATCH, 1)
+class shifter:
+  def __init__(self, ds, latch, clk):
+    self.PIN_DATA  = ds # 16
+    self. PIN_LATCH = latch # 21
+    self.PIN_CLOCK = clk # 20
 
-for x in range(255):
-  shiftout(x)
-  time.sleep(1)
+    GPIO.setup(self.PIN_DATA,  GPIO.OUT)
+    GPIO.setup(self.PIN_LATCH, GPIO.OUT)
+    GPIO.setup(self.PIN_CLOCK, GPIO.OUT)
+
+  def shiftout(self, byte):
+    GPIO.output(self.PIN_LATCH, 0)
+    for x in range(8):
+      GPIO.output(self.PIN_DATA, (byte >> x) & 1)
+      GPIO.output(self.PIN_CLOCK, 1)
+      GPIO.output(self.PIN_CLOCK, 0)
+
+  def latch(self):
+    GPIO.output(self.PIN_LATCH, 1)
+
+if __name__ == "__main__":
+  sftr = shifter(16, 21, 20)
+  for x in range(255):
+    sftr.shiftout(x)
+    time.sleep(1)
