@@ -1,4 +1,6 @@
+import sys
 import shifter as S
+from datetime import datetime as dt
 import time
 import digit_defs as d
 import RPi.GPIO as GPIO
@@ -19,30 +21,30 @@ segments = [
     ('DP', 0b00000001)
     ]
 
-try:
-    while True:
-        # for seg in segments:
-        #     shifty.shiftout(seg[1])
-        #     raw_input(seg[0] + '...')
-        i = 0
-        for digit in digits:
-            print digit[1]
-            dp = 0
-            if i % 2:
-                dp = segments[7][1]
-            i = i + 1
-            shifty.shiftout(digit[0] | dp)
-            shifty.shiftout(digit[0] | dp)
+_hour = -1
+_min = -1
+_sec = -1
 
-            shifty.shiftout(digit[0] | dp)
-            shifty.shiftout(digit[0] | dp)
+def display2Digit(d):
+    if d > 99 or d < 0:
+        #ERROR
+        return
+    hi = int(d / 10)
+    lo = int(d - (hi * 10))
+#    print "d: " + str(d) + ", Hi: " + str(hi) + ", lo: " + str(lo)
+    shifty.shiftout(digits[lo][0])
+    shifty.shiftout(digits[hi][0])
+    
+def displayTime(now):
+    display2Digit(now.second)
+    display2Digit(now.minute)
+    h = now.hour
+    if h > 12:
+        h = h - 12
+    display2Digit(h)
+    shifty.latch()
 
-            shifty.shiftout(digit[0] | dp)
-            shifty.shiftout(digit[0] | dp)
-
-            shifty.latch()
-            time.sleep(1)
-except:
+def cleanUp():
     shifty.shiftout(0)
     shifty.shiftout(0)
 
@@ -53,6 +55,27 @@ except:
     shifty.shiftout(0)
 
     shifty.latch()
+    GPIO.cleanup()
+    
+try:
+    while True:
+        now = dt.now()
+        if _hour != now.hour or _min != now.minute or _sec != now.second:
+            _hour = now.hour
+            _min = now.minute
+            _sec = now.second
+            displayTime(now)
+
+        time.sleep(0.1)
+except KeyboardInterrupt:
+    cleanUp()
+    sys.exit(0)
+
+except Exception as inst:
+    print "Exception: " + str(type(inst))
+    print inst.args
+    print inst
+    cleanUp()
 
 print "All Done."
 GPIO.cleanup()
