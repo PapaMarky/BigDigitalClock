@@ -1,0 +1,133 @@
+#!/usr/bin/python
+
+# Clock Controller.
+# Listens to REST api on port 5000.
+# Uses lower level modules to manipulate / manage the clock itself
+
+# REST API
+# mode 
+
+import os
+import json
+from flask import request, url_for
+from flask.ext.api import FlaskAPI, status, exceptions
+import time
+from Queue import Queue
+from threading import Thread
+from threading import Lock
+
+app = FlaskAPI(__name__)
+settings_file = "/var/DigitalClock/settings.json"
+
+global settings, settings_lock
+
+def writeSettings():
+    global settings
+    print "writeSettings..."
+    f = open(settings_file, 'w')
+    json.dump(settings, f)
+
+valid_modes = ['clock', 'timer', 'stopwatch']
+valid_timemodes = ['12hr', '24hr']
+
+def loadSettings():
+    global settings
+    print "loadSettings..."
+    settings = {
+        'mode': 'clock',
+        'brightness': 100,
+        'clock_settings': {
+            'timemode': '12hr',
+            'show_tempurature': False,
+            'blink_colons': False,
+            'show_seconds': True
+            },
+        'timer_settings': {
+            },
+        'stopwatch_settings': {
+            }
+        }
+ 
+    if os.path.exists(settings_file):
+        print " Loading " + settings_file
+        s = json.load(open(settings_file, 'r'))
+        for entry in s:
+            settings[entry] = s[entry]
+        writeSettings()
+    else:
+        print " Creating " + settings_file
+        writeSettings()
+
+settings = None
+loadSettings()
+settings_lock = Lock()
+
+###########################
+# Display Thread
+###########################
+
+def runClockDisplay(q):
+    print "starting ClockDisplay..."
+    running = True
+    n = 0
+    while running:
+        while not q.empty():
+            item = q.get()
+            print " display queue: " + str(item)
+            running = False
+            break
+
+        time.sleep(0.1)
+        n = n+1
+        if n >= 10:
+            print "-- TICK"
+            n = 0
+    print "ending ClockDisplay"
+
+global display_thread, display_msg_queue
+display_msg_queue = Queue()
+display_thread = Thread(target=runClockDisplay,args=(display_msg_queue,))
+display_thread.start()
+
+###########################
+# Clockworks Controller
+###########################
+def shutdown_server():
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running werkzeug')
+    func()
+
+@app.route("/stop/", methods=['PUT'])
+def stopClockworks():
+    display_msg_queue.put('stop')
+    print "Wait for thread to stop"
+    display_thread.join()
+    shutdown_server()
+    return 'Server Shutting Down...'
+
+@app.route("/settings/", methods=['GET'])
+def handle_settings_get():
+    return settings
+
+@app.route("/mode/", methods=['GET', 'PUT'])
+def setMode():
+    if request.method == 'PUT':
+        mode = str(request.data.get('mode', ''))
+        # validate
+        settings['mode'] = mode
+        writeSettings()
+        return settings
+
+    elif request.method == 'GET':
+        return settings['mode']
+
+if __name__ == "__main__":
+    print "***** MAIN *****"
+    # load settings file
+    if settings is None:
+        loadSettings()
+
+    # start app
+    print "Starting App"
+    app.run(debug=True, use_reloader=False)
