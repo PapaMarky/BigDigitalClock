@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import sys
 import shifter as S
 from datetime import datetime as dt

@@ -9,8 +9,8 @@
 # Description: Start Clock Application at boot time
 ### END INIT INFO
 
-DIR=/home/pi/BigDigitalClock
-DAEMON=$DIR/BigDigitalClock.py
+DIR=/home/pi/BigDigitalClock/src
+DAEMON=$DIR/DigitalClock.py
 DAEMON_NAME=BigDigitalClock
 
 DAEMON_OPTS=""
