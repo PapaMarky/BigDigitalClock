@@ -26,6 +26,10 @@ _hour = -1
 _min = -1
 _sec = -1
 
+def displayColon():
+    shifty.shiftout(segments[0][1] | segments[2][1])
+#    shifty.shiftout(segments[1][1])
+
 def display2Digit(d):
     if d > 99 or d < 0:
         #ERROR
@@ -37,6 +41,7 @@ def display2Digit(d):
     shifty.shiftout(digits[hi][0])
     
 def displayTime(now):
+    displayColon()
     display2Digit(now.second)
     display2Digit(now.minute)
     h = now.hour
@@ -46,6 +51,8 @@ def displayTime(now):
     shifty.latch()
 
 def cleanUp():
+    shifty.shiftout(0)
+
     shifty.shiftout(0)
     shifty.shiftout(0)
 
