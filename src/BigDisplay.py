@@ -1,5 +1,6 @@
 # copyright 2016, Mark Dyer
 #import shifter as S
+import digit_defs as digits
 
 class BigDisplay:
     def __init__(self, ds, latch, clk):
@@ -8,6 +9,13 @@ class BigDisplay:
         self.decimals = [False, False, False, False, False, False]
         self.colons = [False, False, False];
         self.dirty = True
+
+    def clear_all(self):
+        for i in range(3):
+            self.set_colon(i, False)
+        for i in range(6):
+            self.set_digit(i, ' ')
+            self.set_decimal(i, False)
 
     def update_colons(self):
         colons = 0b00000000
@@ -20,7 +28,12 @@ class BigDisplay:
 
     def update_digits(self):
         for i in range(6):
-            
+            b = digits.get_bits(self.digits[i])
+            if self.decimals[i]:
+                b = b | digits.DIG_DP
+
+            print "DIGIT[{}]: {:#010b}".format(i, b)
+            #self.shift.shiftout(b)
             
     def update(self):
         if self.dirty:

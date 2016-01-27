@@ -44,3 +44,44 @@ DIG_u     = 0b00111000
 # x
 DIG_y     = 0b01110110
 # z
+
+dmap = {
+    '.': DIG_DP,
+    ' ': DIG_SPACE,
+    '0': DIG_0,
+    '1': DIG_1,
+    '2': DIG_2,
+    '3': DIG_3,
+    '4': DIG_4,
+    '5': DIG_5,
+    '6': DIG_6,
+    '7': DIG_7,
+    '8': DIG_8,
+    '9': DIG_9,
+    'A': DIG_A,
+    'b': DIG_b,
+    'C': DIG_C,
+    'c': DIG_c,
+    'd': DIG_d,
+    'E': DIG_E,
+    'F': DIG_F,
+    'H': DIG_H,
+    'J': DIG_J,
+    'L': DIG_L,
+    'n': DIG_n,
+    'o': DIG_o,
+    'O': DIG_O,
+    'P': DIG_P,
+    'r': DIG_r,
+    'S': DIG_S,
+    't': DIG_t,
+    'U': DIG_U,
+    'u': DIG_u,
+    'y': DIG_y
+}
+
+def get_bits(v):
+    if v in dmap:
+        return dmap[v]
+    return DIG_SPACE
+
