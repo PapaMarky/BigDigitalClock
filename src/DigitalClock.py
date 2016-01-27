@@ -5,30 +5,20 @@ from datetime import datetime as dt
 import time
 import digit_defs as d
 import RPi.GPIO as GPIO
+import BigDisplay as B
 
-shifty = S.shifter(16, 21, 20)
-
-digits = [(d.DIG_0, 0), (d.DIG_1, 1), (d.DIG_2, 2), (d.DIG_3, 3), (d.DIG_4, 4), (d.DIG_5, 5),
-          (d.DIG_6, 6), (d.DIG_7, 7), (d.DIG_8, 8), (d.DIG_9, 9) ]
-
-segments = [
-    ('A',  0b10000000),
-    ('B',  0b01000000),
-    ('C',  0b00100000),
-    ('D',  0b00010000),
-    ('E',  0b00001000),
-    ('F',  0b00000100),
-    ('G',  0b00000010),
-    ('DP', 0b00000001)
-    ]
+display = B.BigDisplay(16, 21, 20)
 
 _hour = -1
 _min = -1
 _sec = -1
 
+show_seconds = True
+
 def displayColon():
-    shifty.shiftout(segments[0][1] | segments[2][1])
-#    shifty.shiftout(segments[1][1])
+    display.set_colon(0, show_seconds)
+    display.set_colon(1, !show_seconds)
+    display.set_colon(2, show_seconds)
 
 def display2Digit(d):
     if d > 99 or d < 0:
@@ -40,29 +30,33 @@ def display2Digit(d):
     shifty.shiftout(digits[lo][0])
     shifty.shiftout(digits[hi][0])
     
+def splitDigits(d):
+    if d > 99 or d < 0:
+        return None
+    hi = int(d / 10)
+    lo = int(d - (hi * 10))
+    return (lo, hi)
+
 def displayTime(now):
     displayColon()
-    display2Digit(now.second)
-    display2Digit(now.minute)
+    sec = splitDigits(now.second)
+    min = splitDigits(now.minute)
     h = now.hour
     if h > 12:
         h = h - 12
-    display2Digit(h)
-    shifty.latch()
+    hr = splitDigits(h)
+
+    display.set_digit(5, sec[1])
+    display.set_digit(4, sec[0])
+
+    display.set_digit(3, min[1])
+    display.set_digit(2, min[0])
+
+    display.set_digit(1, hr[1])
+    display.set_digit(0, hr[0])
 
 def cleanUp():
-    shifty.shiftout(0)
-
-    shifty.shiftout(0)
-    shifty.shiftout(0)
-
-    shifty.shiftout(0)
-    shifty.shiftout(0)
-
-    shifty.shiftout(0)
-    shifty.shiftout(0)
-
-    shifty.latch()
+    display.clear_all()
     GPIO.cleanup()
     
 try:
@@ -73,6 +67,7 @@ try:
             _min = now.minute
             _sec = now.second
             displayTime(now)
+            display.update()
 
         time.sleep(0.1)
 except KeyboardInterrupt:
@@ -86,4 +81,4 @@ except Exception as inst:
     cleanUp()
 
 print "All Done."
-GPIO.cleanup()
+cleanup()
