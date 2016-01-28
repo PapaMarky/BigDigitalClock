@@ -9,6 +9,9 @@ if __name__ == "__main__":
     clockworks_thread = ClockWorksThread.ClockWorksThread()
     threads.append(clockworks_thread)
 
+    clockcontrol_thread = ClockControlThread.ClockControlThread()
+    threads.append(clockcontrol_thread)
+
     for t in threads:
         t.join()
 
