@@ -1,10 +1,10 @@
 # copyright 2016, Mark Dyer
-#import shifter as S
+import shifter as S
 import digit_defs as digits
 
 class BigDisplay:
     def __init__(self, ds, latch, clk):
-#        self.shift = S.shifter(ds, latch, clk)
+        self.shift = S.shifter(ds, latch, clk)
         self.digits = [' ',' ',' ',' ',' ',' ']
         self.decimals = [False, False, False, False, False, False]
         self.colons = [False, False, False];
@@ -24,22 +24,23 @@ class BigDisplay:
                 colons = colons | (0b00000001 << (8 - i))
 
         #print "COLONS: {:#010b}".format(colons)
-        #self.shift.shiftout(colons)
+        self.shift.shiftout(colons)
 
     def update_digits(self):
         for i in range(6):
-            b = digits.get_bits(self.digits[i])
+            b = digits.get_bits(str(self.digits[i]))
             if self.decimals[i]:
                 b = b | digits.DIG_DP
 
-            print "DIGIT[{}]: {:#010b}".format(i, b)
-            #self.shift.shiftout(b)
+            #print "DIGIT[{}]: {} = {:#010b}".format(i, self.digits[i], b)
+            self.shift.shiftout(b)
             
     def update(self):
         if self.dirty:
             self.dirty = False
             self.update_colons()
             self.update_digits()
+            self.shift.latch()
 
     def set_colon(self, n, v):
         if self.colons[n] is not v:
@@ -47,6 +48,7 @@ class BigDisplay:
             self.dirty = True
 
     def set_digit(self, n, v):
+        #print "set_digit({}, {})".format(n, v)
         if self.digits[n] is not v:
             self.digits[n] = v
             self.dirty = True
