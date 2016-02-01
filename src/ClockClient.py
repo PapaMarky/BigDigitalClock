@@ -4,6 +4,8 @@ import socket
 import logging
 
 class ClockClient:
+    CLIENT_LIST = []
+
     def __init__(self, name):
         self.name = name
         self.logger = logging.getLogger(name + '.client')
@@ -11,6 +13,7 @@ class ClockClient:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect(('127.0.0.1', 60969))
         self.sock.settimeout(0)
+        ClockClient.CLIENT_LIST.append(self)
 
     def send_message(self, msg):
         try:

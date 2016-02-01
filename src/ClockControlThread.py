@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # Copyright 2016, Mark Dyer
 import threading
 import ClockConfig as config
@@ -15,7 +14,22 @@ class ClockControlThread(threading.Thread):
         self.running = True
 
     def shutdown(self):
+        logger.info('shutdown')
         self.running = False
+        self.display_q.put('shutdown')
+
+    def handle(self, handler, thread, data):
+        logger.info("Message From '%s': '%s'", thread.name, str(data))
+
+        if data == 'shutdown':
+            self.shutdown()
+            return
+
+        tokens = data.split(':')
+        if tokens[0] == 'brightness':
+            b = int(tokens[1])
+            logger.info("Setting Brightness to %d", b)
+            self.display_q.put(tokens)
 
     def run(self):
         logger.info("ClockControlThread Starting")
