@@ -4,7 +4,6 @@ import shifter as S
 from datetime import datetime as dt
 import time
 import digit_defs as d
-import RPi.GPIO as GPIO
 import BigDisplay as B
 import logging
 
@@ -23,22 +22,21 @@ ch.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
 
+dsPin    = 16
+latchPin = 21
+clkPin   = 20
+pwmPin   = 18 # Broadcom pin 18 (P1 pin 12) Controls brightness of display
 
-display = B.BigDisplay(16, 21, 20)
-
-# brightness circuit test
-import select
-pwmPin = 18 # Broadcom pin 18 (P1 pin 12)
-dc = 50     # duty cycle (0 - 100)
-
-GPIO.setup(pwmPin, GPIO.OUT)
-pwm = GPIO.PWM(pwmPin, 50)
+display = B.BigDisplay(dsPin, latchPin, clkPin, pwmPin)
 
 _hour = -1
 _min = -1
 _sec = -1
 
 show_seconds = True
+
+def set_brightness(dc):
+    display.set_brightness(dc)
 
 def displayColon():
     display.set_colon(0, True)
@@ -86,37 +84,8 @@ def cleanUp():
     display.clear_all()
     GPIO.cleanup()
 
-# brightness circuit test
-pwm.start(dc)
-
-logger.info("Starting")
-logger.info("Brightness: %d%%", dc)
-
 try:
     while True:
-        while False and sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
-            line = sys.stdin.readline().rstrip()
-            print "LINE: '{}'".format(line)
-            new_dc = dc
-            if line.isdigit():
-                new_dc = int(line)
-            else:
-                for c in line:
-                    if c is '=' or c is '+':
-                        new_dc = new_dc + 1
-                    elif c is '-' or c is '_':
-                        new_dc = new_dc - 1
-
-            if new_dc > 100:
-                new_dc = 100
-            elif new_dc < 0:
-                new_dc = 0
-
-            if new_dc != dc:
-                dc = new_dc
-                print "DC: {}".format(dc)
-                pwm.ChangeDutyCycle(dc)
-
         now = dt.now()
         if _hour != now.hour or _min != now.minute or _sec != now.second:
             _hour = now.hour
