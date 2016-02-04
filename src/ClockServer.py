@@ -19,26 +19,29 @@ class ConnectionThread(threading.Thread):
         for h in ConnectionThread.connections:
             h.shutdown()
 
-    def __init__(self, socket):
+    def __init__(self, socket, server):
         ConnectionThread.THREAD_COUNT = ConnectionThread.THREAD_COUNT + 1
         thread_name = 'ConnectionThread-{}'.format(ConnectionThread.THREAD_COUNT)
         super(ConnectionThread, self).__init__(name=thread_name)
         self.socket = socket
         self.socket.setblocking(False)
+        self.server = server
 
         self.logger = logging.getLogger('BigClock.' + thread_name)
         if ConnectionThread.connections is not None:
             ConnectionThread.connections.append(self)
         self.task_q = Queue.Queue()
 
+        self.shuttingdown = False
+
     def finish(self):
         if ConnectionThread.connections is not None:
             ConnectionThread.connections.remove(self)
 
     def shutdown(self):
-        self.logger.info('shutdown')
-        self.send_message('shutdown')
+        self.logger.info('*** SHUTDOWN ***')
         self.running = False
+        self.shuttingdown = True
 
     def send_message(self, message):
         self.logger.debug("send_message: '%s'", message)
@@ -48,10 +51,14 @@ class ConnectionThread(threading.Thread):
         if task.has_key('type') and task['type'] == 'response':
             task.pop('type', None)
             task.pop('connection', None)
+            cmd = task['msg'][0]
+
             self.logger.info("Handling response: %s", str(task))
             response = json.dumps(task)
-            self.logger.info("Handling response: %s", response)
             self.send_message(response)
+
+            if cmd == 'shutdown':
+                self.shutdown()
 
     def queue_task(self, task):
         self.task_q.put(task)
@@ -80,10 +87,11 @@ class ConnectionThread(threading.Thread):
                 if request is not None:
                     self.logger.debug("Got '%s'", str(request))
                     self.logger.debug("cur_thread '%s'", self.thread)
-                    request = json.loads(request)
-                    request['connection'] = self
-                    if ClockServer.controller is not None:
-                        ClockServer.controller.queue_task(request)
+                    if request != '':
+                        request = json.loads(request)
+                        request['connection'] = self
+                        if ClockServer.controller is not None:
+                            ClockServer.controller.queue_task(request)
             except:
                 self.logger.error("Exception on %s, %s: '%s'",
                              threading.current_thread().name,
@@ -94,13 +102,8 @@ class ConnectionThread(threading.Thread):
             while not self.task_q.empty():
                 task = self.task_q.get()
                 self.handle_task(task)
-
-            if request == 'shutdown':
-                self.shutdown_all()
-                self.running = False
-                return
-            if request == 'done':
-                return
+        if self.shuttingdown:
+            self.server.shutdown()
 
 class ClockServer(threading.Thread):
 
@@ -118,7 +121,7 @@ class ClockServer(threading.Thread):
 
     def shutdown(self):
         if self.socket is not None:
-            self.socket.shutdown()
+            self.socket.shutdown(socket.SHUT_RDWR)
             self.socket.close()
         self.running = False
 
@@ -134,7 +137,7 @@ class ClockServer(threading.Thread):
         while self.running:
             (clientsocket, address) = self.socket.accept()
             self.logger.info("Connection from %s", address)
-            ct = ConnectionThread(clientsocket)
+            ct = ConnectionThread(clientsocket, self)
             ct.start()
             
     def notify_all(self, sender, msg):

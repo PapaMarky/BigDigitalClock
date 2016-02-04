@@ -3,6 +3,7 @@ import sys, os
 import select
 import ClockClient as c
 import logging
+import json
 
 # Set up main logging stuff
 logger = logging.getLogger('ClockCLI')
@@ -41,7 +42,6 @@ def handle_input(msg):
     logger.info("Command: '%s'", msg)
 
     if msg == 'shutdown':
-        running = False
         client.send_shutdown()
 
     if msg == '.':
@@ -54,15 +54,22 @@ def handle_input(msg):
         client.set_brightness(int(msg[1]))
         return
 
-    if msg == 'done':
+def handle_message(msg):
+    global running
+
+    list = msg['msg']
+    print ""
+    print "RESPONSE: {}".format(str(msg['msg']))
+    print "  STATUS: {}".format(msg['status'])
+
+    if msg['msg'][0] == 'shutdown':
         running = False
-        return
 
 if __name__ == '__main__':
     global running
     running = True
     id = "ClockCLI-{}".format(os.getpid())
-    client = c.ClockClient(id)
+    client = c.ClockClient('ClockCLI')
     show_prompt()
     while running:
         line = check_for_input()
@@ -72,10 +79,17 @@ if __name__ == '__main__':
             line = check_for_input()
 
         line = client.check_for_message()
-        while line is not None:
-            logging.info('got message: "%s"', line)
-            print ""
+        need_prompt = False
+
+        while line is not None and line != '':
+            need_prompt = True
+            logger.info('got message: "%s"', line)
+            msg = json.loads(line)
+            handle_message(msg)
             line = client.check_for_message()
+
+        if need_prompt:
+            show_prompt()
 
     client.shutdown()
     print "Exiting"
