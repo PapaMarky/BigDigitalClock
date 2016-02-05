@@ -2,6 +2,7 @@
 import sys
 import socket
 import errno
+import select
 import ClockClient
 import logging
 import threading
@@ -70,6 +71,10 @@ class ConnectionThread(threading.Thread):
             err = e.args[0]
             if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
                 return None
+            elif err == 57:
+                logger.error('Socket is no longer connected')
+                self.running = False
+                return None
             else:
                 self.logger.error("check_for_request Exception: %s", e)
                 return None
@@ -102,6 +107,8 @@ class ConnectionThread(threading.Thread):
             while not self.task_q.empty():
                 task = self.task_q.get()
                 self.handle_task(task)
+
+        self.logger.info('connection closed. server shutdown: %s', str(self.shuttingdown))
         if self.shuttingdown:
             self.server.shutdown()
 
@@ -120,9 +127,13 @@ class ClockServer(threading.Thread):
         self.daemon = True
 
     def shutdown(self):
+        self.logger.info('shutdown')
         if self.socket is not None:
-            self.socket.shutdown(socket.SHUT_RDWR)
-            self.socket.close()
+            try:
+                self.socket.shutdown(socket.SHUT_RDWR)
+                self.socket.close()
+            except:
+                pass # we're shutting down. Ignore exceptions
         self.running = False
 
     def run(self):
@@ -134,11 +145,18 @@ class ClockServer(threading.Thread):
         self.socket.bind((self.host, self.port))
         self.socket.listen(5)
 
+        read_list = [self.socket]
+
         while self.running:
-            (clientsocket, address) = self.socket.accept()
-            self.logger.info("Connection from %s", address)
-            ct = ConnectionThread(clientsocket, self)
-            ct.start()
+            readable, writeable, errored = select.select(read_list, [], [])
+
+            for s in readable:
+                (clientsocket, address) = self.socket.accept()
+                self.logger.info("Connection from %s", address)
+                ct = ConnectionThread(clientsocket, self)
+                ct.start()
+
+        self.logger.info('no longer running')
             
     def notify_all(self, sender, msg):
         for handler in ConnectionThread.connections:

@@ -65,6 +65,9 @@ class ClockControlThread(threading.Thread):
                 logger.debug('Active Count: %s', threading.active_count())
                 self.handle_job(job)
             # check the server
+            if not self.server.running:
+                self.running = False
 
+        logger.info('no longer running')
         server.ClockServer.controller = None
         self.server.shutdown()
