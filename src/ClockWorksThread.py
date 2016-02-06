@@ -12,6 +12,10 @@ class ClockWorksThread(Thread):
         self.display_q = display_q
         self.running = True
 
+    def stop(self):
+        logger.info('stop() called')
+        self.running = False
+
     def queue_task(self, task):
         self.display_q.put(task)
 
@@ -21,7 +25,7 @@ class ClockWorksThread(Thread):
     def handle_job(self, job):
         logger.debug('Handling Job: %s', str(job))
         if job['msg'][0] == 'shutdown':
-            self.running = False
+            self.stop()
             job['status'] = 'OK'
 
         if job['msg'][0] == 'brightness':
@@ -40,3 +44,4 @@ class ClockWorksThread(Thread):
                 job = self.display_q.get()
                 self.handle_job(job)
         
+        logger.info("ClockWorksThread no longer running")

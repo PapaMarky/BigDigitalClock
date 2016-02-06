@@ -4,6 +4,9 @@ import Queue
 import ClockControlThread
 import ClockWorksThread
 import logging
+import sys
+import time
+import threading
 
 # Set up main logging stuff
 logger = logging.getLogger('BigClock')
@@ -31,19 +34,32 @@ if __name__ == "__main__":
     threads = []
     # Start the threads
     clockworks_thread = ClockWorksThread.ClockWorksThread(control_q, display_q)
-    clockworks_thread.daemon = True
+    #clockworks_thread.daemon = True
     threads.append(clockworks_thread)
     clockworks_thread.start()
 
     clockcontrol_thread = ClockControlThread.ClockControlThread(control_q, display_q)
-    clockcontrol_thread.daemon = True
+    #clockcontrol_thread.daemon = True
     threads.append(clockcontrol_thread)
     clockcontrol_thread.start()
 
-    for t in threads:
-        t.join()
+    while clockcontrol_thread.running or clockworks_thread.running:
+        pass
+
+    while clockworks_thread.running:
+        logger.info('Main shutting down clockworks_thread')
+        clockworks_thread.stop()
+        time.sleep(2)
+
+    while clockcontrol_thread.running:
+        logger.info('Main shutting down clockcontrol_thread')
+        clockcontrol_thread.stop()
+        time.sleep(2)
 
     logger.info("******** EXITING BigClockMain ********")
+
+    for t in threading.enumerate():
+        logger.info('leftover: %s', t.name)
 
 
 

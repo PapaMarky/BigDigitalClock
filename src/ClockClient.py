@@ -15,8 +15,9 @@ class ClockClient:
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect(('127.0.0.1', 60969))
-        self.sock.settimeout(0)
+        self.sock.settimeout(1)
         ClockClient.CLIENT_LIST.append(self)
+        self.running = True
 
     def send_message(self, msg):
         self.logger.info('send_message "%s"', msg)
@@ -26,16 +27,30 @@ class ClockClient:
             self.logger.error("Exception: '%s'", sys.exc_info()[0])
 
     def check_for_message(self):
+        msg = None
         try:
             msg = self.sock.recv(1024)
-        except socket.error, e:
+        except socket.timeout, e:
             err = e.args[0]
-            if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
+            if err == 'timed out':
                 return None
             else:
                 self.logger.error("check_for_message Exception: %s", e)
-                return None
-        self.logger.debug("Got Message: %s", msg)
+                # should exit
+                self.shutdown()
+                sys.exit(1)
+        except socket.error, e:
+            self.logger.error("check_for_message Exception: %s", e)
+            # should exit
+            self.shutdown()
+            sys.exit(2)
+        else:
+            if len(msg) == 0:
+                self.logger.info("Server has closed.")
+                # should exit
+                self.shutdown()
+            else:
+                self.logger.debug("Got Message: %s", msg)
         return msg
 
     def send_shutdown(self):
@@ -45,6 +60,7 @@ class ClockClient:
     def shutdown(self):
         self.logger.info('shutdown')
         self.sock.close()
+        self.running = False
 
     def shutdown_server(self):
         self.logger.info('shutdown_server')

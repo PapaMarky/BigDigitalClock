@@ -6,8 +6,11 @@ import logging
 
 logger = logging.getLogger('BigClock.Config')
 
+VALID_MODES = ['off', 'clock']
+
 class ClockConfig:
     DEFAULTS = {
+        'mode': 'clock',
         'clock': {
             # if True 24hr mode, if False 12hr mode 
             'twenty_four_hour': False,
@@ -39,4 +42,5 @@ class ClockConfig:
         else:
             with open(self.path) as json_file:
                 self.config = json.load(json_file)
+            # Merge with defaults
 

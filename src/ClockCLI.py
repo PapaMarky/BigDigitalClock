@@ -6,7 +6,8 @@ import logging
 import json
 
 # Set up main logging stuff
-logger = logging.getLogger('ClockCLI')
+id = "ClockCLI-{}".format(os.getpid())
+logger = logging.getLogger(id)
 logger.setLevel(logging.DEBUG)
 fh = logging.FileHandler('/var/log/ClockCLI.log')
 fh.setLevel(logging.DEBUG)
@@ -59,7 +60,8 @@ def handle_message(msg):
 
     list = msg['msg']
     print ""
-    print "RESPONSE: {}".format(str(msg['msg']))
+    type = msg['type'].upper()
+    print "type: {}".format(type, str(msg['msg']))
     print "  STATUS: {}".format(msg['status'])
 
     if msg['msg'][0] == 'shutdown':
@@ -69,9 +71,9 @@ if __name__ == '__main__':
     global running
     running = True
     id = "ClockCLI-{}".format(os.getpid())
-    client = c.ClockClient('ClockCLI')
+    client = c.ClockClient(id)
     show_prompt()
-    while running:
+    while running and client.running:
         line = check_for_input()
         while line is not None:
             handle_input(line)

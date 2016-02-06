@@ -3,6 +3,7 @@ import threading
 import ClockConfig as config
 import ClockServer as server
 import logging
+import copy
 
 logger = logging.getLogger('BigClock.ControlThread')
 
@@ -14,14 +15,24 @@ class ClockControlThread(threading.Thread):
         self.control_q = control_q
         self.display_q = display_q
         self.running = True
+        self.finished = False
+        self.response_handlers = {
+            'shutdown':   self.resp_shutdown,
+            'brightness': self.resp_brightness,
+            'mode':       self.resp_mode
+            }
+
+    def stop(self):
+        logger.info('stop() called')
+        self.running = False
 
     def queue_task(self, task):
         self.control_q.put(task)
 
     def shutdown(self):
         logger.info('shutdown')
-        logger.debug('Active Count: %s', threading.active_count())
-        self.running = False
+        self.server.shutdown()
+        self.stop()
 
     def handle_request(self, request):
         logger.info("Message From '%s': '%s'", request['connection'].thread.name, str(request))
@@ -30,13 +41,49 @@ class ClockControlThread(threading.Thread):
             self.display_q.put(request)
         else:
             logger.error("bad request: '%s'", tokens[0])
+            connection = request['connection']
+            request['type'] = 'response'
+            request['status'] = 'BAD REQUEST'
+            connection.queue_task(request)
+
+    def resp_ignore(self, response):
+        logger.info('Ignoring response: %s', str(response))
+
+    def resp_shutdown(self, response):
+        logger.info('handle shutdown response')
+
+    def resp_mode(self, response):
+        logger.info('handle mode response')
+
+    def resp_brightness(self, response):
+        logger.info('handle brightness response')
 
     def handle_response(self, response):
-        logger.debug("handle_response %s", str(response))
         connection = response['connection']
+        logger.debug("handle_response %s", str(response))
         connection.queue_task(response)
+        # update config
+        cmd = response['msg'][0]
+        self.response_handlers[cmd](response)
 
+        if response['status'] == 'OK':
+            logger.debug('send notifications to all but %s', connection.name)
+            response = copy.deepcopy(response)
+
+            response['type'] = 'notify'
+            for t in threading.enumerate():
+                logger.debug('maybe notify %s', t.name)
+                if t.name != connection.name and t.name.startswith('ConnectionThread-'):
+                    logger.debug('NOTIFY %s', t.name)
+                    t.queue_task(response)
+
+            if cmd == 'shutdown':
+                self.shutdown()
+                    
     def handle_job(self, job):
+        if not self.running:
+            return
+
         logger.debug("handle_job %s", str(job))
         if job.has_key('type'):
             if job['type'] == 'request':
@@ -44,8 +91,8 @@ class ClockControlThread(threading.Thread):
             if job['type'] == 'response':
                 self.handle_response(job)
 
-
     def run(self):
+        self.running = True
         logger.info("ClockControlThread Starting")
         self.config = config.ClockConfig('/var/BigClock/config.json')
 
@@ -66,8 +113,9 @@ class ClockControlThread(threading.Thread):
                 self.handle_job(job)
             # check the server
             if not self.server.running:
-                self.running = False
+                logger.info('server has stopped  running')
+                self.stop()
 
         logger.info('no longer running')
         server.ClockServer.controller = None
-        self.server.shutdown()
+        self.finished = True

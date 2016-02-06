@@ -49,8 +49,7 @@ class ConnectionThread(threading.Thread):
         self.socket.sendall(message)
 
     def handle_task(self, task):
-        if task.has_key('type') and task['type'] == 'response':
-            task.pop('type', None)
+        if task.has_key('type') and (task['type'] == 'response' or task['type'] == 'notify'):
             task.pop('connection', None)
             cmd = task['msg'][0]
 
@@ -70,9 +69,10 @@ class ConnectionThread(threading.Thread):
         except socket.error, e:
             err = e.args[0]
             if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
+                # self.logger.debug('Socket would block')
                 return None
             elif err == 57:
-                logger.error('Socket is no longer connected')
+                self.logger.error('Socket is no longer connected')
                 self.running = False
                 return None
             else:
@@ -97,11 +97,18 @@ class ConnectionThread(threading.Thread):
                         request['connection'] = self
                         if ClockServer.controller is not None:
                             ClockServer.controller.queue_task(request)
+                    else:
+                        self.stop()
             except:
-                self.logger.error("Exception on %s, %s: '%s'",
-                             threading.current_thread().name,
-                             sys.exc_info()[0],
-                             sys.exc_info()[1])
+                name = 'NO THREAD'
+                if threading:
+                    name = threading.cur_thread()
+                    self.logger.error("Exception on %s, %s: '%s'",
+                                      name,
+                                      sys.exc_info()[0],
+                                      sys.exc_info()[1])
+                else:
+                    self.logger.error("Exception")
                 return
 
             while not self.task_q.empty():
@@ -123,8 +130,12 @@ class ClockServer(threading.Thread):
         self.host = host
         self.port = port
         self.socket = None
+        self.running = True
+        #self.daemon = True
+
+    def stop(self):
+        self.logger.info('stop() called')
         self.running = False
-        self.daemon = True
 
     def shutdown(self):
         self.logger.info('shutdown')
@@ -132,18 +143,24 @@ class ClockServer(threading.Thread):
             try:
                 self.socket.shutdown(socket.SHUT_RDWR)
                 self.socket.close()
+                self.socket = None
             except:
                 pass # we're shutting down. Ignore exceptions
-        self.running = False
+        self.stop()
 
     def run(self):
         self.logger.info("Running Server Thread")
         self.running = True
 
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.logger.info("Created Server: %s : %s", self.host, self.port)
-        self.socket.bind((self.host, self.port))
-        self.socket.listen(5)
+        try:
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.logger.info("Created Server: %s : %s", self.host, self.port)
+            self.socket.bind((self.host, self.port))
+            self.socket.listen(5)
+        except Exception, e:
+            self.logger.error("socket exception: %s", e)
+            self.stop()
+            return
 
         read_list = [self.socket]
 
