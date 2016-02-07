@@ -71,7 +71,8 @@ class ConnectionThread(threading.Thread):
             if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
                 # self.logger.debug('Socket would block')
                 return None
-            elif err == 57:
+
+            elif err == 57: # ??
                 self.logger.error('Socket is no longer connected')
                 self.running = False
                 return None
@@ -98,6 +99,7 @@ class ConnectionThread(threading.Thread):
                         if ClockServer.controller is not None:
                             ClockServer.controller.queue_task(request)
                     else:
+                        self.logger.info('Got empty request')
                         self.stop()
             except:
                 name = 'NO THREAD'
@@ -146,6 +148,7 @@ class ClockServer(threading.Thread):
                 self.socket = None
             except:
                 pass # we're shutting down. Ignore exceptions
+        self.logger.info('stopping for shutdown')
         self.stop()
 
     def run(self):
@@ -165,13 +168,27 @@ class ClockServer(threading.Thread):
         read_list = [self.socket]
 
         while self.running:
-            readable, writeable, errored = select.select(read_list, [], [])
+            try:
+                readable, writeable, errored = select.select(read_list, [], [], 0)
+            except socket.error, e:
+                err = e.args[0]
+                if err == errno.EBADF:
+                    self.logger.info('Socket file descriptor turned sour')
+                else:
+                    self.logger.error("Select Exception: %s", e)
+                self.stop()
+                continue
 
             for s in readable:
-                (clientsocket, address) = self.socket.accept()
-                self.logger.info("Connection from %s", address)
-                ct = ConnectionThread(clientsocket, self)
-                ct.start()
+                try:
+                    self.logger.info('Socket is readable')
+                    (clientsocket, address) = self.socket.accept()
+                    self.logger.info("Connection from %s", address)
+                    ct = ConnectionThread(clientsocket, self)
+                    ct.start()
+                except Exception, e:
+                    self.logger.error("Accept Exception: %s", e)
+                    self.stop()
 
         self.logger.info('no longer running')
             

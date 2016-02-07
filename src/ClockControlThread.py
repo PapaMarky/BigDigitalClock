@@ -30,7 +30,7 @@ class ClockControlThread(threading.Thread):
         self.control_q.put(task)
 
     def shutdown(self):
-        logger.info('shutdown')
+        logger.info('shutdown - shutting down server')
         self.server.shutdown()
         self.stop()
 
