@@ -156,12 +156,8 @@ class ClockServer(threading.Thread):
         while self.running:
             try:
                 readable, writeable, errored = select.select(read_list, [], [], 0)
-            except socket.error, e:
-                err = e.args[0]
-                if err == errno.EBADF:
-                    self.logger.info('Socket file descriptor turned sour')
-                else:
-                    self.logger.error("Select Exception: %s", e)
+            except Exception, e:
+                self.logger.error("Select Exception: %s", e)
                 self.shutdown()
                 continue
 

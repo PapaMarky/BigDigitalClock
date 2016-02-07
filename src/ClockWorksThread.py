@@ -11,6 +11,37 @@ class ClockWorksThread(Thread):
         self.control_q = control_q
         self.display_q = display_q
         self.running = True
+        self.request_handlers = {
+            'shutdown': self.handle_shutdown,
+            'brightness': self.handle_brightness,
+            'mode': self.handle_mode
+            }
+
+    def handle_shutdown(self, request):
+        # TODO turn off the clock hardware
+        request['status'] = 'OK'
+        self.stop()
+
+    def handle_brightness(self, request):
+        msg = request['msg']
+        if len(msg) != 2:
+            request['status'] = 'BAD ARGS'
+            return
+
+        b = msg[1]
+        logger.info('Setting clock brightness to %s', b)
+        # TODO set brightness of hardware
+        request['status'] = 'OK'
+
+    def handle_mode(self, request):
+        msg = request['msg']
+        if len(msg) != 2:
+            request['status'] = 'BAD ARGS'
+            return
+        m = msg[1]
+        logger.info('Setting clock mode to "%s"', m)
+        # TODO set mode of display controller
+        request['status'] = 'OK'
 
     def stop(self):
         logger.info('stop() called')
@@ -24,13 +55,11 @@ class ClockWorksThread(Thread):
 
     def handle_job(self, job):
         logger.debug('Handling Job: %s', str(job))
-        if job['msg'][0] == 'shutdown':
-            self.stop()
-            job['status'] = 'OK'
 
-        if job['msg'][0] == 'brightness':
-            self.set_brightness(job['msg'][1])
-            job['status'] = 'OK'
+        if 'msg' in job and isinstance(job['msg'], list):
+            cmd = job['msg'][0]
+            logger.info('Calling handler for "%s"', cmd)
+            self.request_handlers[cmd](job)
 
         # Queue up the results
         job['type'] = 'response'
