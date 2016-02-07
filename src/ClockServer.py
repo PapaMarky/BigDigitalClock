@@ -9,17 +9,9 @@ import threading
 import json
 import Queue
 
-#logger = logging.getLogger('BigClock.Server')
-
 class ConnectionThread(threading.Thread):
-    connections = []
     THREAD_COUNT = 0
         
-    def shutdown_all(self):
-        self.logger.info("shutdown_all")
-        for h in ConnectionThread.connections:
-            h.shutdown()
-
     def __init__(self, socket, server):
         ConnectionThread.THREAD_COUNT = ConnectionThread.THREAD_COUNT + 1
         thread_name = 'ConnectionThread-{}'.format(ConnectionThread.THREAD_COUNT)
@@ -29,27 +21,28 @@ class ConnectionThread(threading.Thread):
         self.server = server
 
         self.logger = logging.getLogger('BigClock.' + thread_name)
-        if ConnectionThread.connections is not None:
-            ConnectionThread.connections.append(self)
         self.task_q = Queue.Queue()
 
         self.shuttingdown = False
 
-    def finish(self):
-        if ConnectionThread.connections is not None:
-            ConnectionThread.connections.remove(self)
-
+    # call shutdown() when the server is being shutdown,
+    # otherwise call stop()
     def shutdown(self):
         self.logger.info('*** SHUTDOWN ***')
-        self.running = False
         self.shuttingdown = True
 
+    # call stop() when ending this connection
+    def stop(self):
+        self.logger.info('stop() called')
+        self.running = False
+        
     def send_message(self, message):
         self.logger.debug("send_message: '%s'", message)
         self.socket.sendall(message)
 
+    # handle a task - tasks come via the task_q
     def handle_task(self, task):
-        if task.has_key('type') and (task['type'] == 'response' or task['type'] == 'notify'):
+        if 'type' in task and task['type'] in ['response', 'notify']:
             task.pop('connection', None)
             cmd = task['msg'][0]
 
@@ -69,17 +62,16 @@ class ConnectionThread(threading.Thread):
         except socket.error, e:
             err = e.args[0]
             if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
-                # self.logger.debug('Socket would block')
-                return None
-
-            elif err == 57: # ??
-                self.logger.error('Socket is no longer connected')
-                self.running = False
                 return None
             else:
                 self.logger.error("check_for_request Exception: %s", e)
+                self.stop()
                 return None
         self.logger.debug("Got Request: %s", request)
+        if request == '':
+            # empty request means the connection went away
+            self.stop()
+            return None
         return request
 
     def run(self):
@@ -91,8 +83,7 @@ class ConnectionThread(threading.Thread):
             try:
                 request = self.check_for_request()
                 if request is not None:
-                    self.logger.debug("Got '%s'", str(request))
-                    self.logger.debug("cur_thread '%s'", self.thread)
+                    self.logger.debug("%s Got '%s'", self.thread.name, str(request))
                     if request != '':
                         request = json.loads(request)
                         request['connection'] = self
@@ -117,7 +108,7 @@ class ConnectionThread(threading.Thread):
                 task = self.task_q.get()
                 self.handle_task(task)
 
-        self.logger.info('connection closed. server shutdown: %s', str(self.shuttingdown))
+        self.logger.info('%s: connection closed. server shutdown: %s', self.thread.name, str(self.shuttingdown))
         if self.shuttingdown:
             self.server.shutdown()
 
@@ -133,11 +124,6 @@ class ClockServer(threading.Thread):
         self.port = port
         self.socket = None
         self.running = True
-        #self.daemon = True
-
-    def stop(self):
-        self.logger.info('stop() called')
-        self.running = False
 
     def shutdown(self):
         self.logger.info('shutdown')
@@ -149,7 +135,7 @@ class ClockServer(threading.Thread):
             except:
                 pass # we're shutting down. Ignore exceptions
         self.logger.info('stopping for shutdown')
-        self.stop()
+        self.running = False
 
     def run(self):
         self.logger.info("Running Server Thread")
@@ -162,7 +148,7 @@ class ClockServer(threading.Thread):
             self.socket.listen(5)
         except Exception, e:
             self.logger.error("socket exception: %s", e)
-            self.stop()
+            self.shutdown()
             return
 
         read_list = [self.socket]
@@ -176,7 +162,7 @@ class ClockServer(threading.Thread):
                     self.logger.info('Socket file descriptor turned sour')
                 else:
                     self.logger.error("Select Exception: %s", e)
-                self.stop()
+                self.shutdown()
                 continue
 
             for s in readable:
@@ -188,11 +174,6 @@ class ClockServer(threading.Thread):
                     ct.start()
                 except Exception, e:
                     self.logger.error("Accept Exception: %s", e)
-                    self.stop()
+                    self.shutdown()
 
         self.logger.info('no longer running')
-            
-    def notify_all(self, sender, msg):
-        for handler in ConnectionThread.connections:
-            handler.request.sendall(msg)
-

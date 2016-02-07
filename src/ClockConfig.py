@@ -11,10 +11,12 @@ VALID_MODES = ['off', 'clock']
 class ClockConfig:
     DEFAULTS = {
         'mode': 'clock',
+        'brightness': 25,
         'clock': {
             # if True 24hr mode, if False 12hr mode 
             'twenty_four_hour': False,
-            'brightness': 25
+            'show_seconds': True,
+            'show_temperature': False
             }
         }
     def __init__(self, path):
@@ -32,6 +34,13 @@ class ClockConfig:
         with open(self.path, 'w') as json_file:
             json.dump(self.config, json_file)
 
+    def merge_dict(self, dict_target, dict_source):
+        for key in dict_source:
+            if not key in dict_target:
+                dict_target[key] = dict_source[key]
+            elif isinstance(dict_source[key], dict):
+                self.merge_dict(dict_target[key], dict_source[key])
+                
     def load_file(self):
         logger.debug('load_file()')
 
@@ -43,4 +52,5 @@ class ClockConfig:
             with open(self.path) as json_file:
                 self.config = json.load(json_file)
             # Merge with defaults
+
 

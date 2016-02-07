@@ -46,9 +46,6 @@ class ClockControlThread(threading.Thread):
             request['status'] = 'BAD REQUEST'
             connection.queue_task(request)
 
-    def resp_ignore(self, response):
-        logger.info('Ignoring response: %s', str(response))
-
     def resp_shutdown(self, response):
         logger.info('handle shutdown response')
 
@@ -61,30 +58,40 @@ class ClockControlThread(threading.Thread):
     def handle_response(self, response):
         connection = response['connection']
         logger.debug("handle_response %s", str(response))
+        # put the response in the queue of the connection the request came in on
         connection.queue_task(response)
-        # update config
+
+        # call the appropriate response handler to do any post processing.
+        # update config, etc
         cmd = response['msg'][0]
         self.response_handlers[cmd](response)
 
+        # if the response indicates that the request succeeded, notify all
+        # other connections so they can update their view of the world.
+        # TODO: move this to a function and call it from the response handlers
+        # for requests that need to send notifications
         if response['status'] == 'OK':
             logger.debug('send notifications to all but %s', connection.name)
+            # make a copy so that we are not modifying the object in the task_q of the
+            # connection that recieved the request. We change 'type' from 'response'
+            # to 'notify' so clients can tell if they sent the request or not.
             response = copy.deepcopy(response)
 
             response['type'] = 'notify'
             for t in threading.enumerate():
-                logger.debug('maybe notify %s', t.name)
                 if t.name != connection.name and t.name.startswith('ConnectionThread-'):
                     logger.debug('NOTIFY %s', t.name)
                     t.queue_task(response)
 
             if cmd == 'shutdown':
                 self.shutdown()
-                    
+
     def handle_job(self, job):
         if not self.running:
             return
 
         logger.debug("handle_job %s", str(job))
+        # TODO: create new type 'control' and use it, for example, to shutdown thread
         if job.has_key('type'):
             if job['type'] == 'request':
                 self.handle_request(job)
@@ -93,14 +100,24 @@ class ClockControlThread(threading.Thread):
 
     def run(self):
         self.running = True
+        config_file = '/var/BigClock/config.json'
+
         logger.info("ClockControlThread Starting")
-        self.config = config.ClockConfig('/var/BigClock/config.json')
+        self.config = config.ClockConfig(config_file)
+
+        if self.config is None:
+            logger.error("Failed to load configuration: '%s'", config_file)
+            return
 
         HOST, PORT = 'localhost', 60969
 
         logger.info("ClockControlThread Starting Server")
-        self.server = server.ClockServer(self, HOST, PORT)
-        self.server.start()
+        try:
+            self.server = server.ClockServer(self, HOST, PORT)
+            self.server.start()
+        except Exception, e:
+            logger.error("Failed to start server thread")
+            return
 
         logger.info("Server running in thread '%s'", self.server.name)
 
