@@ -54,6 +54,11 @@ class ClockControlThread(threading.Thread):
 
     def resp_brightness(self, response):
         logger.info('handle brightness response')
+        # update the config file
+        tokens = response['msg']
+        b = tokens[1]
+        self.config.set_brightness(b)
+        
 
     def handle_response(self, response):
         connection = response['connection']

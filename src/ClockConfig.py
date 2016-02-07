@@ -24,6 +24,16 @@ class ClockConfig:
         self.config = None
         self.load_file()
 
+    def set_brightness(self, b):
+        self.config['brightness'] = b
+        logger.info('set_brightness(%s)', b)
+        self.write_file()
+
+    def set_mode(self, m):
+        self.config['mode'] = m
+        logger.info('set_mode(%s)', m)
+        self.write_file()
+
     def get_config(self):
         if self.config is None:
             load_file()
