@@ -6,6 +6,7 @@ import time
 import digit_defs as d
 import BigDisplay as B
 import logging
+import RPi.GPIO as GPIO
 
 # Set up main logging stuff
 logger = logging.getLogger('BigClock')
@@ -27,7 +28,7 @@ latchPin = 21
 clkPin   = 20
 pwmPin   = 18 # Broadcom pin 18 (P1 pin 12) Controls brightness of display
 
-display = B.BigDisplay(dsPin, latchPin, clkPin, pwmPin)
+display = B.BigDisplay('BigClock', dsPin, latchPin, clkPin, pwmPin)
 
 _hour = -1
 _min = -1
@@ -42,16 +43,6 @@ def displayColon():
     display.set_colon(0, True)
     display.set_colon(1, True)
     display.set_colon(2, True)
-
-def display2Digit(d):
-    if d > 99 or d < 0:
-        #ERROR
-        return
-    hi = int(d / 10)
-    lo = int(d - (hi * 10))
-#    print "d: " + str(d) + ", Hi: " + str(hi) + ", lo: " + str(lo)
-    shifty.shiftout(digits[lo][0])
-    shifty.shiftout(digits[hi][0])
     
 def splitDigits(d):
     if d > 99 or d < 0:
@@ -84,6 +75,8 @@ def cleanUp():
     display.clear_all()
     GPIO.cleanup()
 
+set_brightness(50)
+
 try:
     while True:
         now = dt.now()
@@ -108,6 +101,7 @@ except Exception as inst:
     logger.error(inst.args)
     logger.error(inst)
     cleanUp()
+    sys.exit(0)
 
 logger.info("All Done")
 cleanUp()

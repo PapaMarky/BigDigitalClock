@@ -2,9 +2,13 @@
 import RPi.GPIO as GPIO
 import shifter as S
 import digit_defs as digits
+import logging
 
 class BigDisplay:
-    def __init__(self, ds, latch, clk, brightnessPin):
+    def __init__(self, log_name, ds, latch, clk, brightnessPin):
+        self.logger = logging.getLogger('{}.Display'.format(log_name))
+        self.logger.info('Creating Display')
+
         self.shift = S.shifter(ds, latch, clk)
         self.digits = [' ',' ',' ',' ',' ',' ']
         self.decimals = [False, False, False, False, False, False]
@@ -14,6 +18,7 @@ class BigDisplay:
         self.pwm = GPIO.PWM(brightnessPin, 50)
         self.dc = 0 # start with LEDs turned off
         self.pwm.start(self.dc)
+        
 
     def clear_all(self):
         for i in range(3):
@@ -48,11 +53,14 @@ class BigDisplay:
             self.shift.latch()
 
     def set_brightness(self, dc):
+        self.logger.info('Request Set Brightness: %s', dc)
         if dc > 100:
             dc = 100
         if dc < 0:
             dc = 0
+
         if self.dc != dc:
+            self.logger.info('Set Brightness: %s', dc)
             self.dc = dc
             self.pwm.ChangeDutyCycle(self.dc)
 
