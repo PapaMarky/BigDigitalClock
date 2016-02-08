@@ -110,7 +110,7 @@ class ConnectionThread(threading.Thread):
 
         self.logger.info('%s: connection closed. server shutdown: %s', self.thread.name, str(self.shuttingdown))
         if self.shuttingdown:
-            self.server.shutdown()
+            self.server.stop()
 
 class ClockServer(threading.Thread):
 
@@ -127,6 +127,7 @@ class ClockServer(threading.Thread):
 
     def shutdown(self):
         self.logger.info('shutdown')
+        self.running = False
         if self.socket is not None:
             try:
                 self.socket.shutdown(socket.SHUT_RDWR)
@@ -135,8 +136,10 @@ class ClockServer(threading.Thread):
             except:
                 pass # we're shutting down. Ignore exceptions
         self.logger.info('stopping for shutdown')
-        self.running = False
 
+    def stop(self):
+        self.running = False
+    
     def run(self):
         self.logger.info("Running Server Thread")
         self.running = True
@@ -158,7 +161,7 @@ class ClockServer(threading.Thread):
                 readable, writeable, errored = select.select(read_list, [], [], 0)
             except Exception, e:
                 self.logger.error("Select Exception: %s", e)
-                self.shutdown()
+                self.stop()
                 continue
 
             for s in readable:
@@ -170,6 +173,8 @@ class ClockServer(threading.Thread):
                     ct.start()
                 except Exception, e:
                     self.logger.error("Accept Exception: %s", e)
-                    self.shutdown()
+                    self.stop()
+                    continue
 
+        self.shutdown()
         self.logger.info('no longer running')

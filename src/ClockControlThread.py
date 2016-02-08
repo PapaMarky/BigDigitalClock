@@ -31,7 +31,7 @@ class ClockControlThread(threading.Thread):
 
     def shutdown(self):
         logger.info('shutdown - shutting down server')
-        self.server.shutdown()
+        self.server.stop()
         self.stop()
 
     def handle_request(self, request):
@@ -58,7 +58,6 @@ class ClockControlThread(threading.Thread):
         tokens = response['msg']
         b = tokens[1]
         self.config.set_brightness(b)
-        
 
     def handle_response(self, response):
         connection = response['connection']
