@@ -1,23 +1,26 @@
 # copyright 2016, Mark Dyer
-import RPi.GPIO as GPIO
 import shifter as S
 import digit_defs as digits
 import logging
+import pigpio
 
 class BigDisplay:
     def __init__(self, log_name, ds, latch, clk, brightnessPin):
         self.logger = logging.getLogger('{}.Display'.format(log_name))
         self.logger.info('Creating Display')
 
-        self.shift = S.shifter(ds, latch, clk)
+        self.pi = pigpio.pi()
+
+        self.shift = S.shifter('BigClock', ds, latch, clk)
         self.digits = [' ',' ',' ',' ',' ',' ']
         self.decimals = [False, False, False, False, False, False]
         self.colons = [False, False, False];
         self.dirty = True
-        GPIO.setup(brightnessPin, GPIO.OUT)
-        self.pwm = GPIO.PWM(brightnessPin, 50)
+        self.brightnessPin = brightnessPin
+        self.pi.set_mode(brightnessPin, pigpio.ALT2)   # gpio 24 as ALT2
+        self.pi.set_PWM_frequency(brightnessPin, 100)
         self.dc = 0 # start with LEDs turned off
-        self.pwm.start(self.dc)
+        self.pi.set_PWM_dutycycle(brightnessPin, self.dc)
         
 
     def clear_all(self):
@@ -54,15 +57,15 @@ class BigDisplay:
 
     def set_brightness(self, dc):
         self.logger.info('Request Set Brightness: %s', dc)
-        if dc > 100:
-            dc = 100
+        if dc > 255:
+            dc = 255
         if dc < 0:
             dc = 0
 
         if self.dc != dc:
             self.logger.info('Set Brightness: %s', dc)
             self.dc = dc
-            self.pwm.ChangeDutyCycle(self.dc)
+            self.pi.set_PWM_dutycycle(self.brightnessPin, self.dc)
 
     def set_colon(self, n, v):
         if self.colons[n] is not v:

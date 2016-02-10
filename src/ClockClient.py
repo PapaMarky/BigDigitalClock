@@ -68,8 +68,8 @@ class ClockClient:
 
     def set_brightness(self, b):
         self.logger.info('set_brightness %s', b)
-        if b > 100:
-            b = 100
+        if b > 255:
+            b = 255
         if b < 0:
             b = 0
         message = create_request(self.name, ['brightness', b])

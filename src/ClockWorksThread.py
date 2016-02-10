@@ -25,8 +25,9 @@ class ClockWorksThread(Thread):
         dsPin    = 16
         latchPin = 21
         clkPin   = 20
-        pwmPin   = 18 # Broadcom pin 18 (P1 pin 12) Controls brightness of display
+        pwmPin   = 19
 
+        logger.info('create display object')
         self.display = B.BigDisplay('BigClock', dsPin, latchPin, clkPin, pwmPin)
 
         self._hour = -1
@@ -60,6 +61,8 @@ class ClockWorksThread(Thread):
         if h > 12:
             h = h - 12
         hr = self.splitDigits(h)
+
+        #logger.info('displayTime')
 
         self.display.set_digit(5, hr[1])
         self.display.set_digit(4, hr[0])
