@@ -79,7 +79,10 @@ class ClockControlThread(threading.Thread):
             # make a copy so that we are not modifying the object in the task_q of the
             # connection that recieved the request. We change 'type' from 'response'
             # to 'notify' so clients can tell if they sent the request or not.
-            response = copy.deepcopy(response)
+            try:
+                response = copy.deepcopy(response)
+            except Exception, e:
+                logger.error('Deepcopy Exception: %s', e)
 
             response['type'] = 'notify'
             for t in threading.enumerate():

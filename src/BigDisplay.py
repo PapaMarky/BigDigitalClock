@@ -34,7 +34,7 @@ class BigDisplay:
         colons = 0b00000000
         for i in range(3):
             if self.colons[i]:
-                colons = colons | (0b00000001 << (8 - i))
+                colons = colons | (0b00000001 << (7 - i))
 
         #print "COLONS: {:#010b}".format(colons)
         self.shift.shiftout(colons)
@@ -50,6 +50,7 @@ class BigDisplay:
             
     def update(self):
         if self.dirty:
+            self.shift.unlatch()
             self.dirty = False
             self.update_colons()
             self.update_digits()

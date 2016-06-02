@@ -42,6 +42,9 @@ def handle_input(msg):
     global running
     logger.info("Command: '%s'", msg)
 
+    if type(msg) == 'str':
+        msg = msg.split()
+
     if msg == 'shutdown':
         client.send_shutdown()
 
@@ -49,7 +52,7 @@ def handle_input(msg):
         running = False
         return
 
-    msg = msg.split(':')
+    msg = msg.split()
     logger.info("Msg: %s", str(msg))
     if msg[0] == "brightness":
         client.set_brightness(int(msg[1]))

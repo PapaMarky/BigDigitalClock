@@ -41,7 +41,7 @@ class ClockWorksThread(Thread):
     def displayColon(self):
         # TODO make this aware of settings
         self.display.set_colon(0, True)
-        self.display.set_colon(1, True)
+        self.display.set_colon(1, False)
         self.display.set_colon(2, True)
     
     def splitDigits(self, d):
@@ -53,7 +53,6 @@ class ClockWorksThread(Thread):
         return (lo, hi)
 
     def displayTime(self, now):
-        self.displayColon()
         sec = self.splitDigits(now.second)
         min = self.splitDigits(now.minute)
         h = now.hour
@@ -62,6 +61,7 @@ class ClockWorksThread(Thread):
             h = h - 12
         hr = self.splitDigits(h)
 
+        self.displayColon()
         #logger.info('displayTime')
 
         self.display.set_digit(5, hr[1])
