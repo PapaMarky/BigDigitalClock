@@ -21,7 +21,6 @@ ch.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
 
-global running
 running = True
 
 def check_for_input():
@@ -71,7 +70,6 @@ def handle_message(msg):
         running = False
 
 if __name__ == '__main__':
-    global running
     running = True
     id = "ClockCLI-{}".format(os.getpid())
     client = c.ClockClient(id)
