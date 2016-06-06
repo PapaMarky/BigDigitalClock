@@ -1,29 +1,29 @@
 #!/bin/sh
 ### BEGIN INIT INFO
-# Provides: ClockService
-# Required-Start: $remote_fs $syslog pigpiod
+# Provides: pigpiod
+# Required-Start: $remote_fs $syslog
 # Required-Stop: $remote_fs $syslog
 # Default-Start: 2 3 4 5
 # Default-Stop: 0 1 6
 # Short-Description: 
-# Description: Start Clock Application at boot time
+# Description: Start pigpiod at boot
 ### END INIT INFO
 
 DIR=/home/pi/BigDigitalClock/src
-DAEMON=$DIR/BigClockMain.py
-DAEMON_NAME=BigDigitalClock
+DAEMON=/usr/local/bin/pigpiod
+DAEMON_NAME=pigpiod
 
 DAEMON_OPTS=""
 
 DAEMON_USER=root
 
-PIDFILE="/var/run/BigClockMain.pid"
+PIDFILE="/var/run/pigpio.pid"
 
 . /lib/lsb/init-functions
 
 do_start() {
     log_daemon_msg "Starting $DAEMON_NAME"
-    start-stop-daemon --chdir "$DIR" --start --background --pidfile $PIDFILE --make-pidfile --user $DAEMON_USER --chuid $DAEMON_USER --startas $DAEMON -- $DAEMON_OPTS
+    start-stop-daemon --chdir "$DIR" --start --background --pidfile $PIDFILE --user $DAEMON_USER --chuid $DAEMON_USER --startas $DAEMON -- $DAEMON_OPTS
     log_end_msg $?
 }
 
@@ -48,7 +48,7 @@ case "$1" in
    ;;
 
  *)
-   echo "Usage: /etc/init.d/ClockService {start|stop|restart|status}"
+   echo "Usage: /etc/init.d/PigpioService {start|stop|restart|status}"
    exit 1
    ;;
 esac
