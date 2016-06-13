@@ -19,7 +19,9 @@ class ClockWorksThread(Thread):
         self.request_handlers = {
             'shutdown': self.handle_shutdown,
             'brightness': self.handle_brightness,
-            'mode': self.handle_mode
+            'mode': self.handle_mode,
+            'initialize': self.handle_initialize,
+            'config-light-sensor': self.handle_config_light_sensor,
             }
 
         dsPin    = 16
@@ -28,15 +30,13 @@ class ClockWorksThread(Thread):
         pwmPin   = 19
 
         logger.info('create display object')
-        self.display = B.BigDisplay('BigClock', dsPin, latchPin, clkPin, pwmPin)
+        tsl_config = None
+        self.display = B.BigDisplay('BigClock', dsPin, latchPin, clkPin, pwmPin, tsl_config)
 
         self._hour = -1
         self._min = -1
         self._sec = -1
         self.show_seconds = True
-
-    def set_brightness(self, dc):
-        self.display.set_brightness(dc)
 
     def displayColon(self):
         # TODO make this aware of settings
@@ -96,6 +96,17 @@ class ClockWorksThread(Thread):
         self.set_brightness(b)
         request['status'] = 'OK'
 
+    def handle_initialize(self, request):
+        logger.info('Initialization request: "%s"', request)
+        # 2016-06-13 10:03:42,149 - INFO - BigClock.ClockWorksThread - Initialization request: "{'msg': ['initialize', {'brightness': 50}], 'source': 'ControlThread', 'connection': <ClockControlThread(ControlThread, started -1250020240)>, 'internal': True, 'type': 'request'}"
+        msg = request['msg']
+        settings = msg[1]
+        if 'brightness' in settings:
+            b = settings['brightness']
+            self.set_brightness(b)
+        request['status'] = 'OK'
+        
+
     def handle_mode(self, request):
         msg = request['msg']
         if len(msg) != 2:
@@ -106,6 +117,9 @@ class ClockWorksThread(Thread):
         # TODO set mode of display controller
         request['status'] = 'OK'
 
+    def handle_config_light_sensor(self, request):
+        msg = request['msg']
+        
     def stop(self):
         logger.info('stop() called')
         self.running = False
@@ -122,8 +136,12 @@ class ClockWorksThread(Thread):
 
         if 'msg' in job and isinstance(job['msg'], list):
             cmd = job['msg'][0]
-            logger.info('Calling handler for "%s"', cmd)
-            self.request_handlers[cmd](job)
+            if cmd in self.request_handlers:
+                logger.info('Calling handler for "%s"', cmd)
+                self.request_handlers[cmd](job)
+            else:
+                logger.error('No handler for "%s"', cmd)
+                job['status'] = 'NO HANDLER'
 
         # Queue up the results
         job['type'] = 'response'

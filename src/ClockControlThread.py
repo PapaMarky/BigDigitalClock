@@ -2,12 +2,14 @@
 import threading
 import ClockConfig as config
 import ClockServer as server
+from ClockMessage import create_request
+
 import logging
 import copy
 
 logger = logging.getLogger('BigClock.ControlThread')
 
-VALID_REQUESTS = ['shutdown', 'brightness']
+VALID_REQUESTS = ['shutdown', 'brightness', 'mode']
 
 class ClockControlThread(threading.Thread):
     def __init__(self, control_q, display_q):
@@ -35,9 +37,16 @@ class ClockControlThread(threading.Thread):
         self.stop()
 
     def handle_request(self, request):
-        logger.info("Message From '%s': '%s'", request['connection'].thread.name, str(request))
+        sender_name = ''
+        if not 'internal' in request:
+            sender_name = request['connection'].thread.name
+        else:
+            sender_name = 'CONTROL'
+
+        # validate non-ConnectionThread 'connection'
+        logger.info("Message From '%s': '%s'", sender_name, str(request))
         tokens = request['msg']
-        if tokens[0] in VALID_REQUESTS:
+        if tokens[0] in VALID_REQUESTS or sender_name == 'CONTROL':
             self.display_q.put(request)
         else:
             logger.error("bad request: '%s'", tokens[0])
@@ -62,6 +71,9 @@ class ClockControlThread(threading.Thread):
     def handle_response(self, response):
         connection = response['connection']
         logger.debug("handle_response %s", str(response))
+        if 'internal' in response:
+            logger.debug('Internal Message. The buck stops here')
+            return
         # put the response in the queue of the connection the request came in on
         connection.queue_task(response)
 
@@ -105,6 +117,14 @@ class ClockControlThread(threading.Thread):
             if job['type'] == 'response':
                 self.handle_response(job)
 
+    def initial_settings(self):
+        b = self.config.get_brightness()
+        logger.debug('initial_settings: my name: "%s"', self.name)
+        message = create_request(self.name, ['initialize', {'brightness': b}])
+        message['internal'] = True
+        message['connection'] = self
+        self.handle_request(message)
+
     def run(self):
         self.running = True
         config_file = '/var/BigClock/config.json'
@@ -127,6 +147,9 @@ class ClockControlThread(threading.Thread):
             return
 
         logger.info("Server running in thread '%s'", self.server.name)
+
+        # send newly loaded config settings downstream
+        self.initial_settings()
 
         while self.running:
             # check the job queue
