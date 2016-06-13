@@ -53,8 +53,18 @@ def handle_input(msg):
 
     msg = msg.split()
     logger.info("Msg: %s", str(msg))
+    if len(msg) <= 0:
+        logger.warning("Empty input")
+        return
+
     if msg[0] == "brightness":
-        client.set_brightness(int(msg[1]))
+        b = msg[1]
+        try:
+            b = int(b)
+        except:
+            b = msg[1]
+
+        client.set_brightness(b)
         return
 
 def handle_message(msg):
