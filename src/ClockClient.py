@@ -78,6 +78,8 @@ class ClockClient:
             message = create_request(self.name, ['brightness', b])
         elif b == 'auto':
             message = create_request(self.name, ['brightness', b])
+        elif b == '':
+            message = create_request(self.name, ['brightness'])
         else:
             # invalid parameter
             self.logger.error('set_brightness: bad argument: "%s"', str(b))

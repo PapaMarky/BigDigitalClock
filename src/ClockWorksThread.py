@@ -86,14 +86,20 @@ class ClockWorksThread(Thread):
 
     def handle_brightness(self, request):
         msg = request['msg']
-        if len(msg) != 2:
+        if len(msg) > 2:
             request['status'] = 'BAD ARGS'
             return
 
-        b = msg[1]
+        b = 'get'
+        if len(msg) > 1:
+            b = msg[1]
         logger.info('Setting clock brightness to %s', b)
         # TODO set brightness of hardware
-        self.set_brightness(b)
+        b = self.set_brightness(b)
+        if len(msg) > 1:
+            msg[1] = b
+        else:
+            msg.append(b)
         request['status'] = 'OK'
 
     def handle_initialize(self, request):
@@ -106,7 +112,6 @@ class ClockWorksThread(Thread):
             self.set_brightness(b)
         request['status'] = 'OK'
         
-
     def handle_mode(self, request):
         msg = request['msg']
         if len(msg) != 2:
@@ -129,7 +134,7 @@ class ClockWorksThread(Thread):
 
     def set_brightness(self, n):
         logger.info('set_brightness to %s', n)
-        self.display.set_brightness(n)
+        return self.display.set_brightness(n)
 
     def handle_job(self, job):
         logger.debug('Handling Job: %s', str(job))

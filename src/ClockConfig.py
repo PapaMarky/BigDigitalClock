@@ -11,6 +11,14 @@ VALID_MODES = ['off', 'clock']
 class ClockConfig:
     DEFAULTS = {
         'mode': 'clock',
+        'light_sensor': {
+            'gain': 0,
+            'timing': 3,
+            'sensor_min': 0,
+            'sensor_max': 1000,
+            'pwm_min': 5,
+            'pwm_max': 200
+            },
         'brightness': 25,
         'clock': {
             # if True 24hr mode, if False 12hr mode 
@@ -28,6 +36,9 @@ class ClockConfig:
         self.config['brightness'] = b
         logger.info('set_brightness(%s)', b)
         self.write_file()
+
+    def get_brightness(self):
+        return self.config['brightness']
 
     def set_mode(self, m):
         self.config['mode'] = m

@@ -58,11 +58,13 @@ def handle_input(msg):
         return
 
     if msg[0] == "brightness":
-        b = msg[1]
-        try:
-            b = int(b)
-        except:
+        b = ''
+        if len(msg) > 1:
             b = msg[1]
+            try:
+                b = int(b)
+            except:
+                b = msg[1]
 
         client.set_brightness(b)
         return
@@ -73,7 +75,7 @@ def handle_message(msg):
     list = msg['msg']
     print ""
     type = msg['type'].upper()
-    print "type: {}".format(type, str(msg['msg']))
+    print "type: {}: {}".format(type, str(msg['msg']))
     print "  STATUS: {}".format(msg['status'])
 
     if msg['msg'][0] == 'shutdown':

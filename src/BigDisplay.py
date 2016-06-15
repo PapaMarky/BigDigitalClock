@@ -75,19 +75,23 @@ class BigDisplay:
         if isinstance(dc, int):
             self.auto_bright = False
             if dc > 255:
+                self.logger.info('Clamped brightness to 255')
                 dc = 255
             if dc < 0:
+                self.logger.info('Clamped brightness to 0')
                 dc = 0
 
             if self.dc != dc:
                 self.logger.info('Set Brightness: %s', dc)
                 self.dc = dc
                 self.pi.set_PWM_dutycycle(self.brightnessPin, self.dc)
-            return
+            return dc
 
         if dc == 'auto':
             self.auto_bright = True
+            return dc
 
+        return self.dc
 
     def update_auto_brightness(self):
         # read the sensor
