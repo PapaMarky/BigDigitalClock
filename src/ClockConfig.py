@@ -11,9 +11,11 @@ VALID_MODES = ['off', 'clock']
 class ClockConfig:
     DEFAULTS = {
         'mode': 'clock',
-        'light_sensor': {
+        'lightsensor': {
             'gain': 0,
-            'timing': 3,
+            'timing': 3
+            },
+        'autobright': {
             'sensor_min': 0,
             'sensor_max': 1000,
             'pwm_min': 5,
@@ -39,6 +41,12 @@ class ClockConfig:
 
     def get_brightness(self):
         return self.config['brightness']
+
+    def get_autobright(self):
+        return self.config['autobright']
+
+    def get_lightsensor(self):
+        return self.config['lightsensor']
 
     def set_mode(self, m):
         self.config['mode'] = m

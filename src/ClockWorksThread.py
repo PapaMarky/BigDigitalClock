@@ -107,9 +107,24 @@ class ClockWorksThread(Thread):
         # 2016-06-13 10:03:42,149 - INFO - BigClock.ClockWorksThread - Initialization request: "{'msg': ['initialize', {'brightness': 50}], 'source': 'ControlThread', 'connection': <ClockControlThread(ControlThread, started -1250020240)>, 'internal': True, 'type': 'request'}"
         msg = request['msg']
         settings = msg[1]
+        if 'autobright' in settings:
+            ab = settings['autobright']
+            self.display.config_autobright(ab)
+        else:
+            logging.warn('"autobright" missing from initialization')
+
+        if 'lightsensor' in settings:
+            ls = settings['lightsensor']
+            self.display.config_tsl(ls)
+        else:
+            logging.warn('"lightsensor" missing from initialization')
+            
         if 'brightness' in settings:
             b = settings['brightness']
             self.set_brightness(b)
+        else:
+            logging.warn('"brightness" missing from initialization')
+
         request['status'] = 'OK'
         
     def handle_mode(self, request):

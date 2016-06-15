@@ -23,15 +23,28 @@ class BigDisplay:
         self.dc = 0 # start with LEDs turned off
         self.pi.set_PWM_dutycycle(brightnessPin, self.dc)
         self.auto_bright = False
+
         self.light_sensor = Tsl2591.Tsl2591()
         self.tsl_gain = 0
         self.tsl_timing = 3
-        self.tsl_range = [0, 1000]
+
+        self.sensor_min = 0
+        self.sensor_max = 1000
+        self.pwm_min = 5
+        self.pwm_max = 200
+
+    def config_autobright(self, config):
+        self.sensor_min = config['sensor_min']
+        self.sensor_max = config['sensor_max']
+        self.pwm_min = config['pwm_min']
+        self.pwm_max = config['pwm_max']
 
     def config_tsl(self, config):
         self.tsl_gain = config['gain']
         self.tsl_timing = config['timing']
-        self.tsl_range = config['range']
+
+        self.light_sensor.set_gain(self.tsl_gain)
+        self.light_sensor.set_timing(self.tsl_timing)
 
     def clear_all(self):
         for i in range(3):
@@ -68,7 +81,7 @@ class BigDisplay:
             self.update_colons()
             self.update_digits()
             self.shift.latch()
-
+        
     def set_brightness(self, dc):
         self.logger.info('Request Set Brightness: %s', dc)
 
