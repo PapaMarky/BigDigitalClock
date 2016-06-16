@@ -82,23 +82,26 @@ class BigDisplay:
             self.update_digits()
             self.shift.latch()
         
+    def update_brightness(self, dc):
+        if dc > 255:
+            self.logger.info('Clamped brightness to 255')
+            dc = 255
+        if dc < 0:
+            self.logger.info('Clamped brightness to 0')
+            dc = 0
+
+        if self.dc != dc:
+            self.logger.info('Set Brightness: %s', dc)
+            self.dc = dc
+            self.pi.set_PWM_dutycycle(self.brightnessPin, self.dc)
+        return dc
+        
     def set_brightness(self, dc):
         self.logger.info('Request Set Brightness: %s', dc)
 
         if isinstance(dc, int):
             self.auto_bright = False
-            if dc > 255:
-                self.logger.info('Clamped brightness to 255')
-                dc = 255
-            if dc < 0:
-                self.logger.info('Clamped brightness to 0')
-                dc = 0
-
-            if self.dc != dc:
-                self.logger.info('Set Brightness: %s', dc)
-                self.dc = dc
-                self.pi.set_PWM_dutycycle(self.brightnessPin, self.dc)
-            return dc
+            self.update_brightness(dc)
 
         if dc == 'auto':
             self.auto_bright = True
@@ -106,10 +109,16 @@ class BigDisplay:
 
         return self.dc
 
+    def map_luminosity_to_pwm(self, lum):
+        # (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+        return (lum - self.sensor_min) * (self.pwm_max - self.pwm_min) / (self.sensor_max - self.sensor_min) + self.pwm_min
+
     def update_auto_brightness(self):
         # read the sensor
+        full, ir = self.light_sensor.get_full_luminosity()
+        pwm = self.map_luminosity_to_pwm(full)
         # set the PWM
-        pass
+        self.update_brightness(pwm)
 
     def set_colon(self, n, v):
         if self.colons[n] is not v:

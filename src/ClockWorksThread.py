@@ -24,15 +24,15 @@ class ClockWorksThread(Thread):
             'config-light-sensor': self.handle_config_light_sensor,
             }
 
+        logger.info('create display object')
         dsPin    = 16
         latchPin = 21
         clkPin   = 20
         pwmPin   = 19
-
-        logger.info('create display object')
         tsl_config = None
         self.display = B.BigDisplay('BigClock', dsPin, latchPin, clkPin, pwmPin, tsl_config)
 
+        # clock mode
         self._hour = -1
         self._min = -1
         self._sec = -1
@@ -138,6 +138,7 @@ class ClockWorksThread(Thread):
         request['status'] = 'OK'
 
     def handle_config_light_sensor(self, request):
+        # share code with initialization
         msg = request['msg']
         
     def stop(self):
