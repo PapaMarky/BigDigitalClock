@@ -67,7 +67,7 @@ class Tsl2591(object):
                  gain=GAIN_LOW
                  ):
         self.bus = smbus.SMBus(i2c_bus)
-        self.sendor_address = sensor_address
+        self.sensor_address = sensor_address
         self.integration_time = integration
         self.gain = gain
         self.set_timing(self.integration_time)
@@ -78,7 +78,7 @@ class Tsl2591(object):
         self.enable()
         self.integration_time = integration
         self.bus.write_byte_data(
-                    self.sendor_address,
+                    self.sensor_address,
                     COMMAND_BIT | REGISTER_CONTROL,
                     self.integration_time | self.gain
                     )
@@ -91,7 +91,7 @@ class Tsl2591(object):
         self.enable()
         self.gain = gain
         self.bus.write_byte_data(
-                    self.sendor_address,
+                    self.sensor_address,
                     COMMAND_BIT | REGISTER_CONTROL,
                     self.integration_time | self.gain
                     )
@@ -141,14 +141,14 @@ class Tsl2591(object):
 
     def enable(self):
         self.bus.write_byte_data(
-                    self.sendor_address,
+                    self.sensor_address,
                     COMMAND_BIT | REGISTER_ENABLE,
                     ENABLE_POWERON | ENABLE_AEN | ENABLE_AIEN
                     )  # Enable
 
     def disable(self):
         self.bus.write_byte_data(
-                    self.sendor_address,
+                    self.sensor_address,
                     COMMAND_BIT | REGISTER_ENABLE,
                     ENABLE_POWEROFF
                     )
@@ -157,10 +157,10 @@ class Tsl2591(object):
         self.enable()
         time.sleep(0.120*self.integration_time+1)  # not sure if we need it "// Wait x ms for ADC to complete"
         full = self.bus.read_word_data(
-                    self.sendor_address, COMMAND_BIT | REGISTER_CHAN0_LOW
+                    self.sensor_address, COMMAND_BIT | REGISTER_CHAN0_LOW
                     )
         ir = self.bus.read_word_data(
-                    self.sendor_address, COMMAND_BIT | REGISTER_CHAN1_LOW
+                    self.sensor_address, COMMAND_BIT | REGISTER_CHAN1_LOW
                     )                    
         self.disable()
         return full, ir
