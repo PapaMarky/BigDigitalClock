@@ -3,6 +3,7 @@ import threading
 import ClockConfig as config
 import ClockServer as server
 from ClockMessage import create_request
+from ClockMessage import VALID_MODES
 
 import logging
 import copy
@@ -60,6 +61,9 @@ class ClockControlThread(threading.Thread):
 
     def resp_mode(self, response):
         logger.info('handle mode response')
+        tokens = response['msg']
+        m = tokens[1]
+        self.config.set_mode(m)
 
     def resp_brightness(self, response):
         logger.info('handle brightness response')
@@ -121,8 +125,10 @@ class ClockControlThread(threading.Thread):
         ls = self.config.get_lightsensor()
         ab = self.config.get_autobright()
         b = self.config.get_brightness()
+        m = self.config.get_mode()
+
         logger.debug('initial_settings: my name: "%s"', self.name)
-        message = create_request(self.name, ['initialize', {'brightness': b, 'autobright': ab, 'lightsensor': ls}])
+        message = create_request(self.name, ['initialize', {'brightness': b, 'autobright': ab, 'lightsensor': ls, 'mode': m}])
         message['internal'] = True
         message['connection'] = self
         self.handle_request(message)

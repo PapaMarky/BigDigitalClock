@@ -37,6 +37,31 @@ def show_prompt():
     sys.stdout.write('ClockCLI>> ')
     sys.stdout.flush()
 
+def handle_mode(msg):
+    m = ''
+    if len(msg) > 1:
+        m = msg[1]
+    client.set_mode(m)
+
+def handle_brightness(msg):
+    b = ''
+    if len(msg) > 1:
+        b = msg[1]
+        try:
+            b = int(b)
+        except:
+            b = msg[1]
+
+    client.set_brightness(b)
+
+def handle_shutdown(msg):
+    pass
+
+handlers = {'brightness': handle_brightness,
+            'mode': handle_mode,
+            'shutdown': handle_shutdown
+            }
+
 def handle_input(msg):
     global running
     logger.info("Command: '%s'", msg)
@@ -57,17 +82,10 @@ def handle_input(msg):
         logger.warning("Empty input")
         return
 
-    if msg[0] == "brightness":
-        b = ''
-        if len(msg) > 1:
-            b = msg[1]
-            try:
-                b = int(b)
-            except:
-                b = msg[1]
-
-        client.set_brightness(b)
-        return
+    if msg[0] in handlers:
+        handlers[msg[0]](msg)
+    else:
+        logger.warn('Unknown command: "%s"', msg[0])
 
 def handle_message(msg):
     global running
@@ -85,6 +103,10 @@ if __name__ == '__main__':
     running = True
     id = "ClockCLI-{}".format(os.getpid())
     client = c.ClockClient(id)
+    if len(sys.argv) > 1:
+        if sys.argv[1] == 'shutdown':
+            client.send_shutdown()
+            
     show_prompt()
     while running and client.running:
         line = check_for_input()

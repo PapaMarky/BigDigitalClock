@@ -6,7 +6,7 @@ import logging
 
 logger = logging.getLogger('BigClock.Config')
 
-VALID_MODES = ['off', 'clock']
+from ClockMessage import VALID_MODES
 
 class ClockConfig:
     DEFAULTS = {
@@ -48,10 +48,16 @@ class ClockConfig:
     def get_lightsensor(self):
         return self.config['lightsensor']
 
+    def get_mode(self):
+        return self.config['mode']
+
     def set_mode(self, m):
-        self.config['mode'] = m
-        logger.info('set_mode(%s)', m)
-        self.write_file()
+        if m in VALID_MODES:
+            self.config['mode'] = m
+            logger.info('set_mode(%s)', m)
+            self.write_file()
+        else:
+            logger.error('set_mode: invalid mode: "%s"', m)
 
     def get_config(self):
         if self.config is None:

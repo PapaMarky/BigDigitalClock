@@ -67,7 +67,7 @@ class ConnectionThread(threading.Thread):
                 self.logger.error("check_for_request Exception: %s", e)
                 self.stop()
                 return None
-        self.logger.debug("Got Request: %s", request)
+        self.logger.debug("Got Request: <%s>", request)
         if request == '':
             # empty request means the connection went away
             self.stop()
@@ -86,23 +86,26 @@ class ConnectionThread(threading.Thread):
                     self.logger.debug("%s Got '%s'", self.thread.name, str(request))
                     if request != '':
                         request = json.loads(request)
+                        self.logger.debug('json.request: "%s"', request)
                         request['connection'] = self
                         if ClockServer.controller is not None:
                             ClockServer.controller.queue_task(request)
                     else:
                         self.logger.info('Got empty request')
                         self.stop()
-            except:
+            except Exception, e:
                 name = 'NO THREAD'
                 if threading:
-                    name = threading.cur_thread()
-                    self.logger.error("Exception on %s, %s: '%s'",
+                    if hasattr(threading, "cur_thread"):
+                        name = threading.cur_thread()
+                    self.logger.exception("Exception on %s, %s: '%s'",
                                       name,
                                       sys.exc_info()[0],
                                       sys.exc_info()[1])
                 else:
-                    self.logger.error("Exception")
-                return
+                    self.logger.exception("Exception")
+                self.running = False
+                continue
 
             while not self.task_q.empty():
                 task = self.task_q.get()

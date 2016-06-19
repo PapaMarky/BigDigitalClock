@@ -2,6 +2,8 @@
 import shifter as S
 import Tsl2591
 import digit_defs as digits
+from ClockMessage import VALID_MODES
+
 import logging
 import pigpio
 
@@ -32,6 +34,8 @@ class BigDisplay:
         self.sensor_max = 1000
         self.pwm_min = 5
         self.pwm_max = 200
+
+        self.mode = 'clock'
 
     def config_autobright(self, config):
         self.sensor_min = config['sensor_min']
@@ -119,6 +123,17 @@ class BigDisplay:
         pwm = self.map_luminosity_to_pwm(full)
         # set the PWM
         self.update_brightness(pwm)
+
+    def get_mode(self):
+        return self.mode
+
+    def set_mode(self, m):
+        self.logger.info('Request Set Mode: "%s"', m)
+
+        if m in VALID_MODES:
+            self.mode = m
+
+        return self.mode
 
     def set_colon(self, n, v):
         if self.colons[n] is not v:

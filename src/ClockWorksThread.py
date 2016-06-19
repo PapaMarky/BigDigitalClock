@@ -1,5 +1,7 @@
 # Copyright 2016, Mark Dyer
 import ClockControlThread
+from ClockMessage import VALID_MODES
+
 from threading import Thread
 import logging
 
@@ -7,6 +9,7 @@ import RPi.GPIO as GPIO
 import BigDisplay as B
 from datetime import datetime as dt
 import time
+
 
 logger = logging.getLogger('BigClock.ClockWorksThread')
 
@@ -94,7 +97,7 @@ class ClockWorksThread(Thread):
         if len(msg) > 1:
             b = msg[1]
         logger.info('Setting clock brightness to %s', b)
-        # TODO set brightness of hardware
+
         b = self.set_brightness(b)
         if len(msg) > 1:
             msg[1] = b
@@ -129,13 +132,25 @@ class ClockWorksThread(Thread):
         
     def handle_mode(self, request):
         msg = request['msg']
-        if len(msg) != 2:
+        if len(msg) > 2:
             request['status'] = 'BAD ARGS'
             return
-        m = msg[1]
+
+        m = self.display.get_mode()
+        s = 'OK'
+        if len(msg) > 1:
+            m = msg[1]
+            if m not in VALID_MODES:
+                s = 'BAD ARGS'
+            m = self.display.set_mode(m)
+
         logger.info('Setting clock mode to "%s"', m)
-        # TODO set mode of display controller
-        request['status'] = 'OK'
+        if len(msg) > 1:
+            msg[1] = m
+        else:
+            msg.append(m)
+
+        request['status'] = s
 
     def handle_config_light_sensor(self, request):
         # share code with initialization

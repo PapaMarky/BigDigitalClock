@@ -5,6 +5,7 @@ import errno
 import logging
 import json
 from ClockMessage import create_request
+from ClockMessage import VALID_MODES
 
 class ClockClient:
     CLIENT_LIST = []
@@ -66,6 +67,18 @@ class ClockClient:
         self.logger.info('shutdown_server')
         self.send_message('shutdown')
 
+    def set_mode(self, m):
+        self.logger.info('set_mode %s', m)
+        message = ''
+        if m in VALID_MODES:
+            message = create_request(self.name, ['mode', m])
+        elif m == '' or m == 'get':
+            message = create_request(self.name, ['mode'])
+        else:
+            self.logger.error('set_mode: bad argument: "%s"', str(m))
+            return
+        self.send_message(message)
+
     def set_brightness(self, b):
         self.logger.info('set_brightness %s', b)
         message = ''
@@ -78,7 +91,7 @@ class ClockClient:
             message = create_request(self.name, ['brightness', b])
         elif b == 'auto':
             message = create_request(self.name, ['brightness', b])
-        elif b == '':
+        elif b == '' or b == 'get':
             message = create_request(self.name, ['brightness'])
         else:
             # invalid parameter
