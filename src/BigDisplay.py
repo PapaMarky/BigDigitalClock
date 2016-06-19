@@ -4,6 +4,7 @@ import Tsl2591
 import digit_defs as digits
 from ClockMessage import VALID_MODES
 
+from datetime import datetime as dt
 import logging
 import pigpio
 
@@ -25,6 +26,17 @@ class BigDisplay:
         self.dc = 0 # start with LEDs turned off
         self.pi.set_PWM_dutycycle(brightnessPin, self.dc)
         self.auto_bright = False
+
+        self.mode_handlers = {
+            'clock': self.update_clock_mode,
+            'off':   self.update_off_mode,
+            'timetemp': self.update_timetemp_mode
+            }
+        # clock mode
+        self._hour = -1
+        self._min = -1
+        self._sec = -1
+        self.show_seconds = True
 
         self.light_sensor = Tsl2591.Tsl2591()
         self.tsl_gain = 0
@@ -74,10 +86,61 @@ class BigDisplay:
 
             #print "DIGIT[{}]: {} = {:#010b}".format(i, self.digits[i], b)
             self.shift.shiftout(b)
-            
+
+    def displayColon(self):
+        # TODO make this aware of settings
+        self.set_colon(0, True)
+        self.set_colon(1, False)
+        self.set_colon(2, True)
+    
+    def splitDigits(self, d):
+        if d > 99 or d < 0:
+            return None
+        hi = int(d / 10)
+        lo = int(d - (hi * 10))
+        #print "splitDigits({}): ({}, {})".format(d, lo, hi)
+        return (lo, hi)
+
+    def displayTime(self, now):
+        sec = self.splitDigits(now.second)
+        min = self.splitDigits(now.minute)
+        h = now.hour
+        # TODO Make this aware of settings
+        if h > 12:
+            h = h - 12
+        hr = self.splitDigits(h)
+
+        self.displayColon()
+        #logger.info('displayTime')
+
+        self.set_digit(5, hr[1])
+        self.set_digit(4, hr[0])
+
+        self.set_digit(3, min[1])
+        self.set_digit(2, min[0])
+
+        self.set_digit(1, sec[1])
+        self.set_digit(0, sec[0])
+
+    def update_off_mode(self):
+        pass
+    def update_timetemp_mode(self):
+        pass
+
+    def update_clock_mode(self):
+        now = dt.now()
+        if self._hour != now.hour or self._min != now.minute or self._sec != now.second:
+            self._hour = now.hour
+            self._min = now.minute
+            self._sec = now.second
+            self.displayTime(now)
+        
     def update(self):
         if self.auto_bright:
             self.update_auto_brightness()
+
+        if self.mode in self.mode_handlers:
+            self.mode_handlers[self.mode]()
 
         if self.dirty:
             self.shift.unlatch()
