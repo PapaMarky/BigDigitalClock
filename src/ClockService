@@ -29,7 +29,10 @@ do_start() {
 
 do_stop() {
     log_daemon_msg "Stopping $DAEMON_NAME"
-    start-stop-daemon --stop --pidfile $PIDFILE --retry 10
+    ${DIR}/ClockCLI.py shutdown > ${DIR}/shutdown.log
+#    sleep 10
+    rm -f $PIDFILE
+    #start-stop-daemon --stop --pidfile $PIDFILE --retry 10
     log_end_msg $?
 }
 
