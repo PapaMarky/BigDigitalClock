@@ -5,6 +5,7 @@ import errno
 import logging
 import json
 from ClockMessage import create_request
+from ClockMessage import VALID_COMMANDS
 from ClockMessage import VALID_MODES
 
 class ClockClient:
@@ -14,11 +15,29 @@ class ClockClient:
         self.name = name
         self.logger = logging.getLogger(name + '.client')
 
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect(('127.0.0.1', 60969))
-        self.sock.settimeout(1)
+        self.connected = False
+        self.connect_to_server()
+
         ClockClient.CLIENT_LIST.append(self)
         self.running = True
+        self.command_handlers = {
+            'get': self.handle_get,
+            'set': self.handle_set,
+            'shutdown': self.handle_shutdown
+            }
+
+    def is_connected(self):
+        return self.connected
+
+    def connect_to_server(self):
+        try:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.connect(('127.0.0.1', 60969))
+            self.sock.settimeout(1)
+            self.connected = True
+        except socket.error, e:
+            self.connected = False
+            self.logger.warning('Server Connection Failed')
 
     def send_message(self, msg):
         self.logger.info('send_message "%s"', msg)
@@ -29,6 +48,8 @@ class ClockClient:
 
     def check_for_message(self):
         msg = None
+        if not self.connected:
+            return msg
         try:
             msg = self.sock.recv(1024)
         except socket.timeout, e:
@@ -99,3 +120,53 @@ class ClockClient:
             return
         self.send_message(message)
 
+    # command handlers
+    def handle_shutdown(self, msg):
+        self.send_shutdown()
+
+    def handle_get(self, msg):
+        pass
+
+    def handle_set(self, msg):
+        pass
+
+    def handle_brightness(self, msg):
+        b = ''
+        if len(msg) > 1:
+            b = msg[1]
+            try:
+                b = int(b)
+            except:
+                b = msg[1]
+
+        self.set_brightness(b)
+
+    def handle_request(self, msg):
+        if type(msg) == str:
+            msg = msg.split()
+
+        self.logger.info("Msg: %s", str(msg))
+        if len(msg) <= 0:
+            self.logger.warning("Empty input")
+            return (False, "Empty Request")
+
+        # special client messages
+        if msg[0] == 'connect':
+            if self.connected:
+               return (False, "Already Connected")
+            self.connect_to_server()
+            if self.connected:
+                return (True, "Connected to Server")
+            else:
+                return (False, "Connection Failed")
+
+        if not self.connected:
+            return (False, 'Not Connected to Server')
+
+        if msg[0] in self.command_handlers:
+            command_handlers[msg[0]](msg)
+            return (True, 'Request Sent')
+        else:
+            self.logger.warn('Unknown command: "%s"', msg[0])
+            return (False, 'Unknown Command: {}'.format(msg[0]))
+        

@@ -1,9 +1,10 @@
 #!/usr/bin/python
 import sys, os
 import select
-import ClockClient as c
 import logging
 import json
+
+import ClockClient as c
 
 # Set up main logging stuff
 id = "ClockCLI-{}".format(os.getpid())
@@ -37,55 +38,18 @@ def show_prompt():
     sys.stdout.write('ClockCLI>> ')
     sys.stdout.flush()
 
-def handle_mode(msg):
-    m = ''
-    if len(msg) > 1:
-        m = msg[1]
-    client.set_mode(m)
-
-def handle_brightness(msg):
-    b = ''
-    if len(msg) > 1:
-        b = msg[1]
-        try:
-            b = int(b)
-        except:
-            b = msg[1]
-
-    client.set_brightness(b)
-
-def handle_shutdown(msg):
-    pass
-
-handlers = {'brightness': handle_brightness,
-            'mode': handle_mode,
-            'shutdown': handle_shutdown
-            }
-
 def handle_input(msg):
     global running
     logger.info("Command: '%s'", msg)
-
-    if type(msg) == 'str':
-        msg = msg.split()
-
-    if msg == 'shutdown':
-        client.send_shutdown()
 
     if msg == '.':
         running = False
         return
 
-    msg = msg.split()
-    logger.info("Msg: %s", str(msg))
-    if len(msg) <= 0:
-        logger.warning("Empty input")
-        return
+    status, message = client.handle_request(msg)
 
-    if msg[0] in handlers:
-        handlers[msg[0]](msg)
-    else:
-        logger.warn('Unknown command: "%s"', msg[0])
+    if not status:
+        print "ERROR: {}".format(message)
 
 def handle_message(msg):
     global running
@@ -103,6 +67,9 @@ if __name__ == '__main__':
     running = True
     id = "ClockCLI-{}".format(os.getpid())
     client = c.ClockClient(id)
+    if not client.is_connected():
+        print "Server Connection Failed"
+
     if len(sys.argv) > 1:
         if sys.argv[1] == 'shutdown':
             client.send_shutdown()
