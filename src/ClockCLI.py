@@ -50,6 +50,8 @@ def handle_input(msg):
 
     if not status:
         print "ERROR: {}".format(message)
+    else:
+        print message
 
 def handle_message(msg):
     global running

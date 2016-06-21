@@ -3,14 +3,13 @@ import threading
 import ClockConfig as config
 import ClockServer as server
 from ClockMessage import create_request
-from ClockMessage import VALID_MODES
+from ClockMessage import VALID_COMMANDS
+from ClockMessage import VALID_CONFIGS
 
 import logging
 import copy
 
 logger = logging.getLogger('BigClock.ControlThread')
-
-VALID_REQUESTS = ['shutdown', 'brightness', 'mode']
 
 class ClockControlThread(threading.Thread):
     def __init__(self, control_q, display_q):
@@ -22,7 +21,8 @@ class ClockControlThread(threading.Thread):
         self.response_handlers = {
             'shutdown':   self.resp_shutdown,
             'brightness': self.resp_brightness,
-            'mode':       self.resp_mode
+            'mode':       self.resp_mode,
+            'get':        self.resp_get
             }
 
     def stop(self):
@@ -37,6 +37,26 @@ class ClockControlThread(threading.Thread):
         self.server.stop()
         self.stop()
 
+    def handle_get_request(self, request):
+        logger.debug('*** handle_get_request(%s)', str(request))
+        connection = request['connection']
+        request['type'] = 'response'
+        if 'msg' in request:
+           msg = request['msg']
+           if len(msg) < 2:
+               request['status'] = 'BAD ARGS'
+           else:
+               config = msg[1]
+               logger.debug('    Getting "%s"', config)
+               if config in VALID_CONFIGS:
+                   request['status'] = 'OK'
+               else:
+                   request['status'] = 'BAD CONFIG'
+        else:
+            request['status'] = 'BROKEN'
+
+        connection.queue_task(request)
+
     def handle_request(self, request):
         sender_name = ''
         if not 'internal' in request:
@@ -47,7 +67,10 @@ class ClockControlThread(threading.Thread):
         # validate non-ConnectionThread 'connection'
         logger.info("Message From '%s': '%s'", sender_name, str(request))
         tokens = request['msg']
-        if tokens[0] in VALID_REQUESTS or sender_name == 'CONTROL':
+        if tokens[0] == 'get':
+            self.handle_get_request(request)
+            return
+        elif tokens[0] in VALID_COMMANDS or sender_name == 'CONTROL':
             self.display_q.put(request)
         else:
             logger.error("bad request: '%s'", tokens[0])
@@ -72,6 +95,19 @@ class ClockControlThread(threading.Thread):
         b = tokens[1]
         self.config.set_brightness(b)
 
+    def resp_get(self, response):
+        logger.info('THIS SHOULD NEVER HAPPEN: handle "get" response: %s', str(response))
+        tokens = response['msg']
+        if len(tokens) < 2:
+            response['status'] = 'BAD ARGS'
+            return
+        config = tokens[1]
+        logger.info(' -- getting "%s"', config)
+
+    def resp_bad_cmd(self, response):
+        logger.info('handle bad response: %s', str(response))
+        response['status'] = 'BAD CMD'
+
     def handle_response(self, response):
         connection = response['connection']
         logger.debug("handle_response %s", str(response))
@@ -84,7 +120,10 @@ class ClockControlThread(threading.Thread):
         # call the appropriate response handler to do any post processing.
         # update config, etc
         cmd = response['msg'][0]
-        self.response_handlers[cmd](response)
+        if cmd in self.response_handlers:
+            self.response_handlers[cmd](response)
+        else:
+            self.resp_bad_cmd(response)
 
         # if the response indicates that the request succeeded, notify all
         # other connections so they can update their view of the world.
@@ -118,7 +157,7 @@ class ClockControlThread(threading.Thread):
         if job.has_key('type'):
             if job['type'] == 'request':
                 self.handle_request(job)
-            if job['type'] == 'response':
+            elif job['type'] == 'response':
                 self.handle_response(job)
 
     def initial_settings(self):

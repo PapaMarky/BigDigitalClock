@@ -6,6 +6,7 @@ import logging
 import json
 from ClockMessage import create_request
 from ClockMessage import VALID_COMMANDS
+from ClockMessage import VALID_CONFIGS
 from ClockMessage import VALID_MODES
 
 class ClockClient:
@@ -25,6 +26,10 @@ class ClockClient:
             'set': self.handle_set,
             'shutdown': self.handle_shutdown
             }
+        self.internal_msg_queue = []
+
+    def send_internal_message(self, msg):
+        self.internal_msg_queue.insert(0, json.dumps(msg))
 
     def is_connected(self):
         return self.connected
@@ -48,8 +53,15 @@ class ClockClient:
 
     def check_for_message(self):
         msg = None
-        if not self.connected:
+        if len(self.internal_msg_queue) >= 1:
+            msg = self.internal_msg_queue.pop()
             return msg
+
+        if not self.connected:
+            self.connect_to_server()
+            if not self.connected:
+                return None
+            self.send_internal_message({'type': 'response', 'status': 'OK', 'msg': ['connect']})
         try:
             msg = self.sock.recv(1024)
         except socket.timeout, e:
@@ -88,58 +100,17 @@ class ClockClient:
         self.logger.info('shutdown_server')
         self.send_message('shutdown')
 
-    def set_mode(self, m):
-        self.logger.info('set_mode %s', m)
-        message = ''
-        if m in VALID_MODES:
-            message = create_request(self.name, ['mode', m])
-        elif m == '' or m == 'get':
-            message = create_request(self.name, ['mode'])
-        else:
-            self.logger.error('set_mode: bad argument: "%s"', str(m))
-            return
-        self.send_message(message)
-
-    def set_brightness(self, b):
-        self.logger.info('set_brightness %s', b)
-        message = ''
-        
-        if isinstance(b, int):
-            if b > 255:
-                b = 255
-            if b < 0:
-                b = 0
-            message = create_request(self.name, ['brightness', b])
-        elif b == 'auto':
-            message = create_request(self.name, ['brightness', b])
-        elif b == '' or b == 'get':
-            message = create_request(self.name, ['brightness'])
-        else:
-            # invalid parameter
-            self.logger.error('set_brightness: bad argument: "%s"', str(b))
-            return
-        self.send_message(message)
-
     # command handlers
     def handle_shutdown(self, msg):
         self.send_shutdown()
 
     def handle_get(self, msg):
-        pass
+        message = create_request(self.name, msg)
+        self.send_message(message)
 
     def handle_set(self, msg):
-        pass
-
-    def handle_brightness(self, msg):
-        b = ''
-        if len(msg) > 1:
-            b = msg[1]
-            try:
-                b = int(b)
-            except:
-                b = msg[1]
-
-        self.set_brightness(b)
+        message = create_request(self.name, msg)
+        self.send_message(message)
 
     def handle_request(self, msg):
         if type(msg) == str:
@@ -164,7 +135,7 @@ class ClockClient:
             return (False, 'Not Connected to Server')
 
         if msg[0] in self.command_handlers:
-            command_handlers[msg[0]](msg)
+            self.command_handlers[msg[0]](msg)
             return (True, 'Request Sent')
         else:
             self.logger.warn('Unknown command: "%s"', msg[0])
