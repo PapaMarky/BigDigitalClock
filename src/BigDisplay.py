@@ -164,7 +164,7 @@ class BigDisplay:
         return dc
         
     def set_brightness(self, dc):
-        self.logger.info('Request Set Brightness: %s', dc)
+        self.logger.info('Request Set Brightness: %s (%s)', dc, type(dc))
 
         if isinstance(dc, int):
             self.auto_bright = False

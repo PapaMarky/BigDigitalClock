@@ -24,7 +24,8 @@ class ClockControlThread(threading.Thread):
             'shutdown':   self.resp_shutdown,
             'brightness': self.resp_brightness,
             'mode':       self.resp_mode,
-            'get':        self.resp_get
+            'get':        self.resp_get,
+            'set':        self.resp_set
             }
 
     def stop(self):
@@ -116,6 +117,25 @@ class ClockControlThread(threading.Thread):
             return
         config = tokens[1]
         logger.info(' -- getting "%s"', config)
+
+    def resp_set(self, response):
+        logger.info('handle set response: %s', str(response))
+        if response['status'] != 'OK':
+            logger.info(' -- command failed: %s', response['status'])
+            return
+
+        if 'value' in response:
+            v = response['value']
+            for config in v:
+                logger.info(' -- config: %s', config)
+                if config == 'brightness':
+                    self.config.set_brightness(v[config])
+                elif config == 'mode':
+                    self.config.set_mode(v[config])
+                else:
+                    response['status'] = 'BAD RESPONSE'
+        else:
+            response['status'] = 'MISSING VALUE'
 
     def resp_bad_cmd(self, response):
         logger.info('handle bad response: %s', str(response))

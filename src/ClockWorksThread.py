@@ -4,6 +4,7 @@ from ClockMessage import VALID_MODES
 
 from threading import Thread
 import logging
+import json
 
 import RPi.GPIO as GPIO
 import BigDisplay as B
@@ -24,6 +25,7 @@ class ClockWorksThread(Thread):
             'mode': self.handle_mode,
             'initialize': self.handle_initialize,
             'config-light-sensor': self.handle_config_light_sensor,
+            'set': self.handle_set,
             }
 
         logger.info('create display object')
@@ -62,9 +64,35 @@ class ClockWorksThread(Thread):
             msg.append(b)
         request['status'] = 'OK'
 
+    def handle_set(self, request):
+        logger.info('set request: "%s"', request)
+        msg = request['msg']
+        if len(msg) != 3:
+            request['status'] = 'BAD ARGS'
+            return
+
+        config = msg[1]
+        value = msg[2]
+
+        request['status'] = 'OK'
+        
+        if config == 'brightness':
+            if value != 'auto':
+                value = int(value)
+            value = self.display.set_brightness(value)
+            request['value'] = {config: value}
+        elif config == 'mode':
+            v = self.display.set_mode(value)
+            if v != value:
+                request['status'] = 'BAD MODE'
+            
+            request['value'] = {config: v}
+        else:
+            request['status'] = 'UNKNOWN CONFIG'
+            request['value'] = value
+            
     def handle_initialize(self, request):
         logger.info('Initialization request: "%s"', request)
-        # 2016-06-13 10:03:42,149 - INFO - BigClock.ClockWorksThread - Initialization request: "{'msg': ['initialize', {'brightness': 50}], 'source': 'ControlThread', 'connection': <ClockControlThread(ControlThread, started -1250020240)>, 'internal': True, 'type': 'request'}"
         msg = request['msg']
         settings = msg[1]
         if 'autobright' in settings:
