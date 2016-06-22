@@ -61,6 +61,8 @@ def handle_message(msg):
     type = msg['type'].upper()
     print "type: {}: {}".format(type, str(msg['msg']))
     print "  STATUS: {}".format(msg['status'])
+    if 'value' in msg:
+        print "   VALUE: {}".format(msg['value'])
 
     if msg['msg'][0] == 'shutdown':
         running = False

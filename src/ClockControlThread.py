@@ -1,5 +1,7 @@
 # Copyright 2016, Mark Dyer
 import threading
+import json
+
 import ClockConfig as config
 import ClockServer as server
 from ClockMessage import create_request
@@ -50,6 +52,17 @@ class ClockControlThread(threading.Thread):
                logger.debug('    Getting "%s"', config)
                if config in VALID_CONFIGS:
                    request['status'] = 'OK'
+                   if config == 'brightness':
+                       b = self.config.get_brightness()
+                       logger.debug('   *** brightness: %s', b)
+                       request['value'] = json.dumps({'brightness': b})
+                   elif config == 'mode':
+                       request['status'] = 'OK'
+                       m = self.config.get_mode()
+                       logger.debug('   *** mode: %s', m)
+                       request['value'] = json.dumps({'mode': m})
+                   else:
+                       request['status'] = 'UNIMPLEMENTED CONFIG'
                else:
                    request['status'] = 'BAD CONFIG'
         else:
