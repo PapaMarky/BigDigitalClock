@@ -162,7 +162,13 @@ class BigDisplay:
             self.dc = dc
             self.pi.set_PWM_dutycycle(self.brightnessPin, self.dc)
         return dc
-        
+
+    def get_brightness(self):
+        b = self.dc
+        if self.auto_bright:
+            b = 'auto'
+        return b
+
     def set_brightness(self, dc):
         self.logger.info('Request Set Brightness: %s (%s)', dc, type(dc))
 

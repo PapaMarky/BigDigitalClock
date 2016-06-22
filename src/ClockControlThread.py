@@ -22,8 +22,6 @@ class ClockControlThread(threading.Thread):
         self.finished = False
         self.response_handlers = {
             'shutdown':   self.resp_shutdown,
-            'brightness': self.resp_brightness,
-            'mode':       self.resp_mode,
             'get':        self.resp_get,
             'set':        self.resp_set
             }
@@ -95,19 +93,6 @@ class ClockControlThread(threading.Thread):
 
     def resp_shutdown(self, response):
         logger.info('handle shutdown response')
-
-    def resp_mode(self, response):
-        logger.info('handle mode response')
-        tokens = response['msg']
-        m = tokens[1]
-        self.config.set_mode(m)
-
-    def resp_brightness(self, response):
-        logger.info('handle brightness response')
-        # update the config file
-        tokens = response['msg']
-        b = tokens[1]
-        self.config.set_brightness(b)
 
     def resp_get(self, response):
         logger.info('THIS SHOULD NEVER HAPPEN: handle "get" response: %s', str(response))

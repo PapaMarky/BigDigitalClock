@@ -21,13 +21,10 @@ class ClockWorksThread(Thread):
         self.running = True
         self.request_handlers = {
             'shutdown': self.handle_shutdown,
-            'brightness': self.handle_brightness,
-            'mode': self.handle_mode,
             'initialize': self.handle_initialize,
             'config-light-sensor': self.handle_config_light_sensor,
             'set': self.handle_set,
             }
-
         logger.info('create display object')
         dsPin    = 16
         latchPin = 21
@@ -42,27 +39,9 @@ class ClockWorksThread(Thread):
 
     def handle_shutdown(self, request):
         # TODO turn off the clock hardware
-        self.set_brightness(0)
+        self.display.set_brightness(0)
         request['status'] = 'OK'
         self.stop()
-
-    def handle_brightness(self, request):
-        msg = request['msg']
-        if len(msg) > 2:
-            request['status'] = 'BAD ARGS'
-            return
-
-        b = 'get'
-        if len(msg) > 1:
-            b = msg[1]
-        logger.info('Setting clock brightness to %s', b)
-
-        b = self.set_brightness(b)
-        if len(msg) > 1:
-            msg[1] = b
-        else:
-            msg.append(b)
-        request['status'] = 'OK'
 
     def handle_set(self, request):
         logger.info('set request: "%s"', request)
@@ -78,7 +57,13 @@ class ClockWorksThread(Thread):
         
         if config == 'brightness':
             if value != 'auto':
-                value = int(value)
+                try:
+                    value = int(value)
+                except ValueError,e:
+                    request['status'] = 'BAD BRIGHTNESS'
+                    request['value'] = {config: self.display.get_brightness()}
+                    return
+
             value = self.display.set_brightness(value)
             request['value'] = {config: value}
         elif config == 'mode':
@@ -109,33 +94,11 @@ class ClockWorksThread(Thread):
             
         if 'brightness' in settings:
             b = settings['brightness']
-            self.set_brightness(b)
+            self.display.set_brightness(b)
         else:
             logging.warn('"brightness" missing from initialization')
 
         request['status'] = 'OK'
-        
-    def handle_mode(self, request):
-        msg = request['msg']
-        if len(msg) > 2:
-            request['status'] = 'BAD ARGS'
-            return
-
-        m = self.display.get_mode()
-        s = 'OK'
-        if len(msg) > 1:
-            m = msg[1]
-            if m not in VALID_MODES:
-                s = 'BAD ARGS'
-            m = self.display.set_mode(m)
-
-        logger.info('Setting clock mode to "%s"', m)
-        if len(msg) > 1:
-            msg[1] = m
-        else:
-            msg.append(m)
-
-        request['status'] = s
 
     def handle_config_light_sensor(self, request):
         # share code with initialization
@@ -147,10 +110,6 @@ class ClockWorksThread(Thread):
 
     def queue_task(self, task):
         self.display_q.put(task)
-
-    def set_brightness(self, n):
-        logger.info('set_brightness to %s', n)
-        return self.display.set_brightness(n)
 
     def handle_job(self, job):
         logger.debug('Handling Job: %s', str(job))
@@ -174,7 +133,7 @@ class ClockWorksThread(Thread):
 
     def run(self):
         logger.info("ClockWorksThread Starting")
-        self.set_brightness(50)
+        self.display.set_brightness(50)
 
         while self.running:
             while not self.display_q.empty():
