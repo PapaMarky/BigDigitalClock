@@ -59,7 +59,15 @@ class ClockControlThread(threading.Thread):
                        request['status'] = 'OK'
                        m = self.config.get_mode()
                        logger.debug('   *** mode: %s', m)
-                       request['value'] = json.dumps({'mode': m})
+                       request['value'] = {'mode': m}
+                   elif config == 'temp':
+                       subconfig = msg[2]
+                       if subconfig == 'scale':
+                           s = self.config.get_temp_scale()
+                           logger.debug('   *** temp scale: %s', s)
+                           request['value']  = {'temp': {'scale': s}}
+                       else:
+                           request['status'] = 'UNIMPLEMENTED TEMP CONFIG'
                    else:
                        request['status'] = 'UNIMPLEMENTED CONFIG'
                else:
