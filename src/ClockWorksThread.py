@@ -98,6 +98,10 @@ class ClockWorksThread(Thread):
         else:
             logging.warn('"brightness" missing from initialization')
 
+        if 'mode' in settings:
+            m = settings['mode']
+            self.display.set_mode(m)
+
         request['status'] = 'OK'
 
     def handle_config_light_sensor(self, request):

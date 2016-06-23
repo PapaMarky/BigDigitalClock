@@ -78,7 +78,7 @@ BME280_REGISTER_HUMIDITY_DATA = 0xFD
 class BME280(object):
     def __init__(self, mode=BME280_OSAMPLE_1, address=BME280_I2CADDR, i2c=None,
                  **kwargs):
-        self._logger = logging.getLogger('Adafruit_BMP.BMP085')
+        self._logger = logging.getLogger('BigClock.BMP085')
         # Check that mode is valid.
         if mode not in [BME280_OSAMPLE_1, BME280_OSAMPLE_2, BME280_OSAMPLE_4,
                         BME280_OSAMPLE_8, BME280_OSAMPLE_16]:

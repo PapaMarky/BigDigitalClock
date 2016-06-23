@@ -1,10 +1,13 @@
 # copyright 2016, Mark Dyer
 import shifter as S
 import Tsl2591
+import BME280
+
 import digit_defs as digits
 from ClockMessage import VALID_MODES
 
 from datetime import datetime as dt
+import time
 import logging
 import pigpio
 
@@ -28,10 +31,11 @@ class BigDisplay:
         self.auto_bright = False
 
         self.mode_handlers = {
-            'clock': self.update_clock_mode,
-            'off':   self.update_off_mode,
-            'timetemp': self.update_timetemp_mode
+            'clock': {'update': self.update_clock_mode, 'start': None, 'stop': None},
+            'off':   { 'update': self.update_off_mode, 'start': None, 'stop': None},
+            'timetemp': {'update': self.update_timetemp_mode, 'start': None, 'stop': None}
             }
+
         # clock mode
         self._hour = -1
         self._min = -1
@@ -48,6 +52,16 @@ class BigDisplay:
         self.pwm_max = 200
 
         self.mode = 'clock'
+
+        self.temp_sensor = BME280.BME280()
+        self.temp_scale = 'F'
+        self.timetemp_start = None
+        self.timetemp_length = 5 # seconds
+        self.timetemp_display = 'clock'
+
+    def c_to_f(self, C):
+        F = (C * 9)/5 + 32
+        return F
 
     def config_autobright(self, config):
         self.sensor_min = config['sensor_min']
@@ -101,6 +115,24 @@ class BigDisplay:
         #print "splitDigits({}): ({}, {})".format(d, lo, hi)
         return (lo, hi)
 
+    def displayTemp(self):
+        temp  = self.temp_sensor.read_temperature() # celsius
+        if self.temp_scale == 'F':
+            temp = self.c_to_f(temp)
+        temp_str = "{:5.1f}{}  ".format(temp, self.temp_scale)
+        #self.logger.debug('Current Temperature: "%s"', temp_str)
+
+        # clear colon, set decimal point
+        self.clear_all()
+
+        self.set_decimal(3, True)
+        self.set_digit(5, temp_str[0])
+        self.set_digit(4, temp_str[1])
+        self.set_digit(3, temp_str[2])
+        self.set_digit(2, temp_str[4])
+        self.set_digit(1, temp_str[5])
+        self.set_digit(0, temp_str[6])
+
     def displayTime(self, now):
         sec = self.splitDigits(now.second)
         min = self.splitDigits(now.minute)
@@ -110,6 +142,7 @@ class BigDisplay:
             h = h - 12
         hr = self.splitDigits(h)
 
+        self.clear_all()
         self.displayColon()
         #logger.info('displayTime')
 
@@ -124,8 +157,32 @@ class BigDisplay:
 
     def update_off_mode(self):
         pass
+
+    def start_timetemp_mode(self):
+        self.timetemp_start = time.time()
+
     def update_timetemp_mode(self):
-        pass
+        now = time.time()
+
+        if self.timetemp_start == None:
+            self.timetemp_start = time.time()
+
+        elapsed = now - self.timetemp_start
+        if elapsed >= self.timetemp_length:
+            self.timetemp_start = self.timetemp_start + self.timetemp_length
+            # switch display
+            old_display = self.timetemp_display
+            if self.timetemp_display == 'clock':
+                self.timetemp_display = 'temp'
+            else:
+                self.timetemp_display = 'clock'
+
+            # self.logger.debug('switch timetemp display from "%s" to "%s"', old_display, self.timetemp_display)
+
+        if self.timetemp_display == 'clock':
+            self.update_clock_mode()
+        else:
+            self.displayTemp()
 
     def update_clock_mode(self):
         now = dt.now()
@@ -140,7 +197,7 @@ class BigDisplay:
             self.update_auto_brightness()
 
         if self.mode in self.mode_handlers:
-            self.mode_handlers[self.mode]()
+            self.mode_handlers[self.mode]['update']()
 
         if self.dirty:
             self.shift.unlatch()
@@ -198,8 +255,12 @@ class BigDisplay:
 
     def set_mode(self, m):
         self.logger.info('Request Set Mode: "%s"', m)
-
+        old_mode = self.mode
         if m in VALID_MODES:
+            if old_mode and self.mode_handlers[old_mode]['stop'] is not None:
+                self.mode_handlers[old_mode]['stop']()
+            if self.mode_handlers[m]['start'] is not None:
+                self.mode_handlers[m]['start']()
             self.mode = m
 
         return self.mode
