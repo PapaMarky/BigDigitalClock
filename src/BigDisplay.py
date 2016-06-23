@@ -119,19 +119,18 @@ class BigDisplay:
         temp  = self.temp_sensor.read_temperature() # celsius
         if self.temp_scale == 'F':
             temp = self.c_to_f(temp)
-        temp_str = "{:5.1f}{}  ".format(temp, self.temp_scale)
+        temp_str = "{:3d}*{} ".format(int(round(temp)), self.temp_scale)
         #self.logger.debug('Current Temperature: "%s"', temp_str)
 
         # clear colon, set decimal point
         self.clear_all()
 
-        self.set_decimal(3, True)
         self.set_digit(5, temp_str[0])
         self.set_digit(4, temp_str[1])
         self.set_digit(3, temp_str[2])
-        self.set_digit(2, temp_str[4])
-        self.set_digit(1, temp_str[5])
-        self.set_digit(0, temp_str[6])
+        self.set_digit(2, temp_str[3])
+        self.set_digit(1, temp_str[4])
+        self.set_digit(0, temp_str[5])
 
     def displayTime(self, now):
         sec = self.splitDigits(now.second)
