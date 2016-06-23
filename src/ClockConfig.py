@@ -27,6 +27,9 @@ class ClockConfig:
             'twenty_four_hour': False,
             'show_seconds': True,
             'show_temperature': False
+            },
+        'temp': {
+            'scale': 'F'
             }
         }
     def __init__(self, path):
@@ -50,6 +53,18 @@ class ClockConfig:
 
     def get_mode(self):
         return self.config['mode']
+
+    def set_temp_scale(self, s):
+        s = str(s).upper()
+        if s in ('F', 'C'):
+            if not 'temp' in self.config:
+                self.config['temp'] = {}
+            self.config['temp']['scale'] = s
+            logger.info('set_temp_scale: %s', s)
+            self.write_file()
+
+    def get_temp_scale(self):
+        return self.config['temp']['scale']
 
     def set_mode(self, m):
         if m in VALID_MODES:

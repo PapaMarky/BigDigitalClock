@@ -115,6 +115,18 @@ class BigDisplay:
         #print "splitDigits({}): ({}, {})".format(d, lo, hi)
         return (lo, hi)
 
+    def set_temp_scale(self, scale):
+        s = str(scale).upper()
+        if s != 'C' and s != 'F':
+            return False
+        if s != self.temp_scale:
+            self.temp_scale = s
+            self.dirty = True
+        return True
+
+    def get_temp_scale(self):
+        return self.temp_scale
+        
     def displayTemp(self):
         temp  = self.temp_sensor.read_temperature() # celsius
         if self.temp_scale == 'F':

@@ -111,12 +111,21 @@ class ClockControlThread(threading.Thread):
 
         if 'value' in response:
             v = response['value']
+            logger.info('VALUE: %s', str(v))
             for config in v:
                 logger.info(' -- config: %s', config)
                 if config == 'brightness':
                     self.config.set_brightness(v[config])
                 elif config == 'mode':
                     self.config.set_mode(v[config])
+                elif config == 'temp':
+                    for subconfig in v[config]:
+                        logger.info(' -- subconfig: "%s"', subconfig)
+                        if subconfig == 'scale':
+                            logger.info('    -- value: %s', v[config][subconfig])
+                            self.config.set_temp_scale(v[config][subconfig])
+                        else:
+                            response['status'] = 'BAD RESPONSE'
                 else:
                     response['status'] = 'BAD RESPONSE'
         else:

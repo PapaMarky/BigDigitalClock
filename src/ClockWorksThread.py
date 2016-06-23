@@ -46,7 +46,7 @@ class ClockWorksThread(Thread):
     def handle_set(self, request):
         logger.info('set request: "%s"', request)
         msg = request['msg']
-        if len(msg) != 3:
+        if len(msg) < 3:
             request['status'] = 'BAD ARGS'
             return
 
@@ -72,6 +72,22 @@ class ClockWorksThread(Thread):
                 request['status'] = 'BAD MODE'
             
             request['value'] = {config: v}
+        elif config == 'temp':
+            if len(msg) != 4:
+                request['status'] = 'BAD TEMP ARGS'
+                return
+            tconfig = msg[2]
+            tvalue = msg[3]
+            if tconfig == 'scale':
+                tvalue = tvalue.upper()
+                if tvalue != 'C' and tvalue != 'F':
+                    request['status'] = 'BAD TEMP SCALE'
+                else:
+                    if not self.display.set_temp_scale(tvalue):
+                        request['status'] = 'FAILED'
+                request['value'] = {'temp': {'scale': self.display.get_temp_scale()}}
+            else:
+                request['status'] = 'UNKNOWN TEMP CONFIG'
         else:
             request['status'] = 'UNKNOWN CONFIG'
             request['value'] = value

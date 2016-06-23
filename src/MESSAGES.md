@@ -16,6 +16,9 @@ Get or set the values used for mapping light sensor values to LED PWM (brightnes
 **`mode`**  `clock` | `off` | `stopwatch` | `timer` -
 Set the display mode.
 
+**`temp scale`** `'C'` | `'F'` -
+Display temperature in Celsius or Fahrenheit
+
 **`clock show-seconds`** `True` | `False` -
 In `clock` or `timetemp` determines whether seconds are displayed (HH:MM:SS) or not (HH:MM).
 
