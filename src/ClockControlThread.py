@@ -200,9 +200,10 @@ class ClockControlThread(threading.Thread):
         ab = self.config.get_autobright()
         b = self.config.get_brightness()
         m = self.config.get_mode()
+        temp_scale = self.config.get_temp_scale()
 
         logger.debug('initial_settings: my name: "%s"', self.name)
-        message = create_request(self.name, ['initialize', {'brightness': b, 'autobright': ab, 'lightsensor': ls, 'mode': m}])
+        message = create_request(self.name, ['initialize', {'brightness': b, 'autobright': ab, 'lightsensor': ls, 'mode': m, 'temp': {'scale': temp_scale}}])
         message['internal'] = True
         message['connection'] = self
         self.handle_request(message)

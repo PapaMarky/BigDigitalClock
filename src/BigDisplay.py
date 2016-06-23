@@ -116,6 +116,7 @@ class BigDisplay:
         return (lo, hi)
 
     def set_temp_scale(self, scale):
+        self.logger.debug('set_temp_scale: "%s"', scale)
         s = str(scale).upper()
         if s != 'C' and s != 'F':
             return False

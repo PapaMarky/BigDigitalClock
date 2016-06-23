@@ -118,6 +118,13 @@ class ClockWorksThread(Thread):
             m = settings['mode']
             self.display.set_mode(m)
 
+        if 'temp' in settings:
+            t = settings['temp']
+            logging.info('initialize temp: %s', str(t))
+            if 'scale' in t:
+                logging.info('initialize temp scale: %s', t['scale'])
+                self.display.set_temp_scale(t['scale'])
+
         request['status'] = 'OK'
 
     def handle_config_light_sensor(self, request):
