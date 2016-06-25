@@ -1,6 +1,7 @@
 # Copyright 2016, Mark Dyer
 import ClockControlThread
 from ClockMessage import VALID_MODES
+from ClockMessage import str_to_bool
 
 from threading import Thread
 import logging
@@ -88,6 +89,23 @@ class ClockWorksThread(Thread):
                 request['value'] = {'temp': {'scale': self.display.get_temp_scale()}}
             else:
                 request['status'] = 'UNKNOWN TEMP CONFIG'
+        elif config == 'clock':
+            if len(msg) != 4:
+                request['status'] = 'BAD CLOCK ARGS'
+                return
+            cconfig = msg[2]
+            cvalue = msg[3]
+            if cconfig == 'zero_pad_hour':
+                try:
+                    cvalue = str_to_bool(cvalue)
+                except Exception, e:
+                    cvalue = None
+                    logging.exception('Non-bool zero_pad_hour: %s', cvalue)
+                if cvalue is None:
+                    request['status'] = 'BAD TYPE'
+                    return
+                v = self.display.set_clock_zero_pad_hour(cvalue)
+                request['value'] = {'clock': {'zero_pad_hour': v}}
         else:
             request['status'] = 'UNKNOWN CONFIG'
             request['value'] = value
@@ -124,6 +142,13 @@ class ClockWorksThread(Thread):
             if 'scale' in t:
                 logging.info('initialize temp scale: %s', t['scale'])
                 self.display.set_temp_scale(t['scale'])
+
+        if 'clock' in settings:
+            c = settings['clock']
+            logging.info('initialize clock: %s', str(c))
+            if 'zero_pad_hour' in c:
+                logging.info(' - zero_pad_hour: %s', str(c['zero_pad_hour']))
+                self.display.set_clock_zero_pad_hour(c['zero_pad_hour'])
 
         request['status'] = 'OK'
 

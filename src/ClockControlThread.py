@@ -66,8 +66,18 @@ class ClockControlThread(threading.Thread):
                            s = self.config.get_temp_scale()
                            logger.debug('   *** temp scale: %s', s)
                            request['value']  = {'temp': {'scale': s}}
+                           request['status'] = 'OK'
                        else:
                            request['status'] = 'UNIMPLEMENTED TEMP CONFIG'
+                   elif config == 'clock':
+                       subconfig = msg[2]
+                       if subconfig == 'zero_pad_hour':
+                           z = self.config.get_clock_zero_pad_hour()
+                           logger.debug('  *** clock zero_pad_hour: %s', z)
+                           request['value'] = {'clock': {'zero_pad_hour': z}}
+                           request['status'] = 'OK'
+                       else:
+                           request['status'] = 'UNIMPLEMENTED CLOCK CONFIG'
                    else:
                        request['status'] = 'UNIMPLEMENTED CONFIG'
                else:
@@ -201,9 +211,10 @@ class ClockControlThread(threading.Thread):
         b = self.config.get_brightness()
         m = self.config.get_mode()
         temp_scale = self.config.get_temp_scale()
+        zero_pad = self.config.get_clock_zero_pad_hour()
 
         logger.debug('initial_settings: my name: "%s"', self.name)
-        message = create_request(self.name, ['initialize', {'brightness': b, 'autobright': ab, 'lightsensor': ls, 'mode': m, 'temp': {'scale': temp_scale}}])
+        message = create_request(self.name, ['initialize', {'brightness': b, 'autobright': ab, 'lightsensor': ls, 'mode': m, 'temp': {'scale': temp_scale}, 'clock':{'zero_pad_hour': zero_pad}} ] )
         message['internal'] = True
         message['connection'] = self
         self.handle_request(message)

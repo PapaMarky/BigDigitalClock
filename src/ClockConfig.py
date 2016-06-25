@@ -26,7 +26,7 @@ class ClockConfig:
             # if True 24hr mode, if False 12hr mode 
             'twenty_four_hour': False,
             'show_seconds': True,
-            'show_temperature': False
+            'zero_pad_hour': False,
             },
         'temp': {
             'scale': 'F'
@@ -53,6 +53,16 @@ class ClockConfig:
 
     def get_mode(self):
         return self.config['mode']
+
+    def set_clock_zero_pad_hour(self, zph):
+        if isinstance(zph, bool):
+            if not 'clock' in self.config:
+                self.config['clock'] = {}
+            self.config['clock']['zero_pad_hour'] = zph
+            self.write_file()
+
+    def get_clock_zero_pad_hour(self):
+        return self.config['clock']['zero_pad_hour']
 
     def set_temp_scale(self, s):
         s = str(s).upper()

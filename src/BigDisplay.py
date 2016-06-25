@@ -36,6 +36,8 @@ class BigDisplay:
             'timetemp': {'update': self.update_timetemp_mode, 'start': None, 'stop': None}
             }
 
+        self.clock_zero_pad_hour = True
+
         # clock mode
         self._hour = -1
         self._min = -1
@@ -113,7 +115,16 @@ class BigDisplay:
         hi = int(d / 10)
         lo = int(d - (hi * 10))
         #print "splitDigits({}): ({}, {})".format(d, lo, hi)
-        return (lo, hi)
+        return [lo, hi]
+
+    def set_clock_zero_pad_hour(self, v):
+        self.logger.debug('set_clock_zero_pad_hour: "%s"', v)
+        if isinstance(v, bool):
+            self.clock_zero_pad_hour = v
+        return self.clock_zero_pad_hour
+
+    def get_clock_zero_pad_hour(self):
+        return self.clock_zero_pad_hour
 
     def set_temp_scale(self, scale):
         self.logger.debug('set_temp_scale: "%s"', scale)
@@ -153,6 +164,11 @@ class BigDisplay:
         if h > 12:
             h = h - 12
         hr = self.splitDigits(h)
+
+        #self.logger.debug('hr[0] = "%s", hr[1] = "%s"', hr[0], hr[1])
+        if hr[1] == 0 and not self.clock_zero_pad_hour:
+            hr[1] = ' '
+        #self.logger.debug('hr[0] = "%s", hr[1] = "%s"', hr[0], hr[1])
 
         self.clear_all()
         self.displayColon()
