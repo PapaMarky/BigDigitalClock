@@ -1,6 +1,7 @@
 # Copyright 2016, Mark Dyer
 import ClockControlThread
 from ClockMessage import VALID_MODES
+from ClockMessage import VALID_CLOCK_CONFIGS
 from ClockMessage import str_to_bool
 
 from threading import Thread
@@ -95,17 +96,34 @@ class ClockWorksThread(Thread):
                 return
             cconfig = msg[2]
             cvalue = msg[3]
+            if cconfig not in VALID_CLOCK_CONFIGS:
+                request['status'] = 'UNKNOWN CLOCK CONFIG'
+                return
             if cconfig == 'zero_pad_hour':
                 try:
                     cvalue = str_to_bool(cvalue)
                 except Exception, e:
-                    cvalue = None
                     logging.exception('Non-bool zero_pad_hour: %s', cvalue)
+                    cvalue = None
                 if cvalue is None:
                     request['status'] = 'BAD TYPE'
                     return
                 v = self.display.set_clock_zero_pad_hour(cvalue)
                 request['value'] = {'clock': {'zero_pad_hour': v}}
+            elif cconfig == 'show_seconds':
+                try:
+                    cvalue = str_to_bool(cvalue)
+                except Exception, e:
+                    logging.exception('Non-bool show_seconds: %s', cvalue)
+                    cvalue = None
+                if cvalue is None:
+                    request['status'] = 'BAD TYPE'
+                    return
+                v = self.display.set_clock_show_seconds(cvalue)
+                request['value'] = {'clock': {'show_seconds': v}}
+                
+            else:
+                request['status'] = 'UNIMPLEMENTED CLOCK CONFIG'
         else:
             request['status'] = 'UNKNOWN CONFIG'
             request['value'] = value
@@ -146,9 +164,18 @@ class ClockWorksThread(Thread):
         if 'clock' in settings:
             c = settings['clock']
             logging.info('initialize clock: %s', str(c))
+
             if 'zero_pad_hour' in c:
                 logging.info(' - zero_pad_hour: %s', str(c['zero_pad_hour']))
                 self.display.set_clock_zero_pad_hour(c['zero_pad_hour'])
+            else:
+                logging.warn('"clock zero_pad_hour" missing from initialization')
+
+            if 'show_seconds' in c:
+                logging.info(' - show_seconds: %s', str(c['show_seconds']))
+                self.display.set_clock_show_seconds(c['show_seconds'])
+            else:
+                logging.warn('"clock show_seconds" missing from initialization')
 
         request['status'] = 'OK'
 

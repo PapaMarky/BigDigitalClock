@@ -42,13 +42,14 @@ class BigDisplay:
             'timetemp': {'update': self.update_timetemp_mode, 'start': None, 'stop': None}
             }
 
+        # clock configs
         self.clock_zero_pad_hour = True
+        self.clock_show_seconds = True
 
         # clock mode
         self._hour = -1
         self._min = -1
         self._sec = -1
-        self.show_seconds = True
 
         self.light_sensor = None
         self.tsl_gain = 0
@@ -127,10 +128,14 @@ class BigDisplay:
             self.shift.shiftout(b)
 
     def displayColon(self):
-        # TODO make this aware of settings
-        self.set_colon(0, True)
-        self.set_colon(1, False)
-        self.set_colon(2, True)
+        if self.clock_show_seconds:
+            self.set_colon(0, True)
+            self.set_colon(1, False)
+            self.set_colon(2, True)
+        else:
+            self.set_colon(0, False)
+            self.set_colon(1, True)
+            self.set_colon(2, False)
     
     def splitDigits(self, d):
         if d > 99 or d < 0:
@@ -148,6 +153,15 @@ class BigDisplay:
 
     def get_clock_zero_pad_hour(self):
         return self.clock_zero_pad_hour
+
+    def set_clock_show_seconds(self, v):
+        self.logger.debug('set_clock_show_seconds(%d)', v)
+        if isinstance(v, bool):
+            self.clock_show_seconds = v
+        return self.clock_show_seconds
+
+    def get_clock_show_seconds(self):
+        return self.clock_show_seconds
 
     def set_temp_scale(self, scale):
         self.logger.debug('set_temp_scale: "%s"', scale)
@@ -183,7 +197,7 @@ class BigDisplay:
 
     def displayTime(self, now):
         sec = self.splitDigits(now.second)
-        min = self.splitDigits(now.minute)
+        minute = self.splitDigits(now.minute)
         h = now.hour
         # TODO Make this aware of settings
         if h > 12:
@@ -199,14 +213,25 @@ class BigDisplay:
         self.displayColon()
         #logger.info('displayTime')
 
-        self.set_digit(5, hr[1])
-        self.set_digit(4, hr[0])
+        if self.clock_show_seconds:
+            self.set_digit(5, hr[1])
+            self.set_digit(4, hr[0])
 
-        self.set_digit(3, min[1])
-        self.set_digit(2, min[0])
+            self.set_digit(3, minute[1])
+            self.set_digit(2, minute[0])
 
-        self.set_digit(1, sec[1])
-        self.set_digit(0, sec[0])
+            self.set_digit(1, sec[1])
+            self.set_digit(0, sec[0])
+        else:
+            self.set_digit(5, ' ')
+
+            self.set_digit(4, hr[1])
+            self.set_digit(3, hr[0])
+            
+            self.set_digit(2, minute[1])
+            self.set_digit(1, minute[0])
+
+            self.set_digit(0, ' ')
 
     def update_off_mode(self):
         pass

@@ -64,6 +64,16 @@ class ClockConfig:
     def get_clock_zero_pad_hour(self):
         return self.config['clock']['zero_pad_hour']
 
+    def set_clock_show_seconds(self, zph):
+        if isinstance(zph, bool):
+            if not 'clock' in self.config:
+                self.config['clock'] = {}
+            self.config['clock']['show_seconds'] = zph
+            self.write_file()
+
+    def get_clock_show_seconds(self):
+        return self.config['clock']['show_seconds']
+
     def set_temp_scale(self, s):
         s = str(s).upper()
         if s in ('F', 'C'):

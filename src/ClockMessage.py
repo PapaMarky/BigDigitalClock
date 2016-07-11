@@ -2,7 +2,7 @@
 
 VALID_COMMANDS = ['get', 'set', 'shutdown']
 VALID_CONFIGS = ['brightness', 'mode', 'clock', 'temp']
-VALID_CLOCK_CONFIGS = ['show-seconds', 'zero-pad-hour', 'show-temp']
+VALID_CLOCK_CONFIGS = ['show_seconds', 'zero_pad_hour']
 VALID_TEMP_CONFIGS = ['scale']
 
 VALID_MODES = ['off', 'clock', 'timetemp']
