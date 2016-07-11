@@ -1,7 +1,13 @@
 # copyright 2016, Mark Dyer
 import shifter as S
 import Tsl2591
-import BME280
+#import BME280
+from bme280 import bme280
+from bme280 import bme280_i2c
+
+bme280_i2c.set_default_i2c_address(0x77)
+bme280_i2c.set_default_bus(1)
+bme280.setup()
 
 import digit_defs as digits
 from ClockMessage import VALID_MODES
@@ -44,7 +50,7 @@ class BigDisplay:
         self._sec = -1
         self.show_seconds = True
 
-        self.light_sensor = Tsl2591.Tsl2591()
+        self.light_sensor = None
         self.tsl_gain = 0
         self.tsl_timing = 3
 
@@ -55,12 +61,27 @@ class BigDisplay:
 
         self.mode = 'clock'
 
-        self.temp_sensor = BME280.BME280()
         self.temp_scale = 'F'
         self.timetemp_start = None
         self.timetemp_length = 5 # seconds
         self.timetemp_display = 'clock'
 
+    def get_light_sensor(self):
+        if self.light_sensor is None:
+            try:
+                self.light_sensor = Tsl2591.Tsl2591()
+            except IOError, e:
+                self.logger.exception('IOError creating light_sensor')
+                if self.light_sensor is not None:
+                    self.logger.warn('light_sensor not None: "%s"', str(self.light_sensor))
+                    self.light_sensor = None
+            except Exception, e:
+                self.logger.exception('Exception creating light_sensor (%s)', str(e))
+                if self.light_sensor is not None:
+                    self.logger.warn('light_sensor not None: "%s"', str(self.light_sensor))
+                    self.light_sensor = None
+            return self.light_sensor
+                
     def c_to_f(self, C):
         F = (C * 9)/5 + 32
         return F
@@ -75,8 +96,10 @@ class BigDisplay:
         self.tsl_gain = config['gain']
         self.tsl_timing = config['timing']
 
-        self.light_sensor.set_gain(self.tsl_gain)
-        self.light_sensor.set_timing(self.tsl_timing)
+        light_sensor = self.get_light_sensor()
+        if light_sensor is not None:
+            light_sensor.set_gain(self.tsl_gain)
+            light_sensor.set_timing(self.tsl_timing)
 
     def clear_all(self):
         for i in range(3):
@@ -140,7 +163,9 @@ class BigDisplay:
         return self.temp_scale
         
     def displayTemp(self):
-        temp  = self.temp_sensor.read_temperature() # celsius
+        data = bme280.read_all()
+        temp = data.temperature
+
         if self.temp_scale == 'F':
             temp = self.c_to_f(temp)
         temp_str = "{:3d}*{} ".format(int(round(temp)), self.temp_scale)
@@ -273,7 +298,15 @@ class BigDisplay:
 
     def update_auto_brightness(self):
         # read the sensor
-        full, ir = self.light_sensor.get_full_luminosity()
+        sensor = self.get_light_sensor()
+        if sensor is None:
+            return
+        try:
+            full, ir = sensor.get_full_luminosity()
+        except Exception, e:
+            self.logger.exception('Exception reading light sensor (%s)', str(e))
+            return
+
         pwm = self.map_luminosity_to_pwm(full)
         # set the PWM
         self.update_brightness(pwm)

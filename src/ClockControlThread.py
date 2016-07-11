@@ -61,14 +61,17 @@ class ClockControlThread(threading.Thread):
                        logger.debug('   *** mode: %s', m)
                        request['value'] = {'mode': m}
                    elif config == 'temp':
-                       subconfig = msg[2]
-                       if subconfig == 'scale':
-                           s = self.config.get_temp_scale()
-                           logger.debug('   *** temp scale: %s', s)
-                           request['value']  = {'temp': {'scale': s}}
-                           request['status'] = 'OK'
+                       if len(msg) < 3:
+                           request['status'] = 'MISSING TEMP CONFIG'
                        else:
-                           request['status'] = 'UNIMPLEMENTED TEMP CONFIG'
+                           subconfig = msg[2]
+                           if subconfig == 'scale':
+                               s = self.config.get_temp_scale()
+                               logger.debug('   *** temp scale: %s', s)
+                               request['value']  = {'temp': {'scale': s}}
+                               request['status'] = 'OK'
+                           else:
+                               request['status'] = 'UNIMPLEMENTED TEMP CONFIG'
                    elif config == 'clock':
                        subconfig = msg[2]
                        if subconfig == 'zero_pad_hour':
