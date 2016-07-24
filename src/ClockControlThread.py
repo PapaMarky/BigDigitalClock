@@ -88,6 +88,11 @@ class ClockControlThread(threading.Thread):
                                logger.debug('  *** clock show_seconds: %s', z)
                                request['value'] = {'clock': {'show_seconds': z}}
                                request['status'] = 'OK'
+                           elif subconfig == 'show_temp':
+                               z = self.config.get_clock_show_temp()
+                               logger.debug('  *** clock show_seconds: %s', z)
+                               request['value'] = {'clock': {'show_temp': z}}
+                               request['status'] = 'OK'
                            else:
                                request['status'] = 'UNIMPLEMENTED CLOCK CONFIG'
                    else:
@@ -169,6 +174,8 @@ class ClockControlThread(threading.Thread):
                             self.config.set_clock_zero_pad_hour(v[config][subconfig])
                         elif subconfig == 'show_seconds':
                             self.config.set_clock_show_seconds(v[config][subconfig])
+                        elif subconfig == 'show_temp':
+                            self.config.set_clock_show_temp(v[config][subconfig])
                         else:
                             response['status'] = 'BAD RESPONSE'
                 else:
@@ -240,9 +247,10 @@ class ClockControlThread(threading.Thread):
         temp_scale = self.config.get_temp_scale()
         zero_pad = self.config.get_clock_zero_pad_hour()
         show_secs = self.config.get_clock_show_seconds()
+        show_temp = self.config.get_clock_show_temp()
 
         logger.debug('initial_settings: my name: "%s"', self.name)
-        message = create_request(self.name, ['initialize', {'brightness': b, 'autobright': ab, 'lightsensor': ls, 'mode': m, 'temp': {'scale': temp_scale}, 'clock':{'zero_pad_hour': zero_pad, 'show_seconds': show_secs}} ] )
+        message = create_request(self.name, ['initialize', {'brightness': b, 'autobright': ab, 'lightsensor': ls, 'mode': m, 'temp': {'scale': temp_scale}, 'clock':{'zero_pad_hour': zero_pad, 'show_seconds': show_secs, 'show_temp': show_temp}} ] )
         message['internal'] = True
         message['connection'] = self
         self.handle_request(message)

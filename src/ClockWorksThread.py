@@ -121,6 +121,17 @@ class ClockWorksThread(Thread):
                     return
                 v = self.display.set_clock_show_seconds(cvalue)
                 request['value'] = {'clock': {'show_seconds': v}}
+            elif cconfig == 'show_temp':
+                try:
+                    cvalue = str_to_bool(cvalue)
+                except Exception, e:
+                    logging.exception('Non-bool show_temp: %s', cvalue)
+                    cvalue = None
+                if cvalue is None:
+                    request['status'] = 'BAD TYPE'
+                    return
+                v = self.display.set_clock_show_temp(cvalue)
+                request['value'] = {'clock': {'show_temp': v}}
                 
             else:
                 request['status'] = 'UNIMPLEMENTED CLOCK CONFIG'

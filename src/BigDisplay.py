@@ -39,12 +39,13 @@ class BigDisplay:
         self.mode_handlers = {
             'clock': {'update': self.update_clock_mode, 'start': None, 'stop': None},
             'off':   { 'update': self.update_off_mode, 'start': None, 'stop': None},
-            'timetemp': {'update': self.update_timetemp_mode, 'start': None, 'stop': None}
+            'timetemp': {'update': self.update_timetemp_mode, 'start': self.start_timetemp_mode, 'stop': None}
             }
 
         # clock configs
         self.clock_zero_pad_hour = True
         self.clock_show_seconds = True
+        self.clock_show_temp = False
 
         # clock mode
         self._hour = -1
@@ -163,6 +164,16 @@ class BigDisplay:
     def get_clock_show_seconds(self):
         return self.clock_show_seconds
 
+    def set_clock_show_temp(self, v):
+        self.logger.debug('set_clock_show_temp(%d)', v)
+        self.start_timetemp_mode()
+        if isinstance(v, bool):
+            self.clock_show_temp = v
+        return self.clock_show_temp
+
+    def get_clock_show_temp(self):
+        return self.clock_show_temp
+
     def set_temp_scale(self, scale):
         self.logger.debug('set_temp_scale: "%s"', scale)
         s = str(scale).upper()
@@ -195,7 +206,12 @@ class BigDisplay:
         self.set_digit(1, temp_str[4])
         self.set_digit(0, temp_str[5])
 
-    def displayTime(self, now):
+    def displayTime(self):
+        now = dt.now()
+        if self._hour != now.hour or self._min != now.minute or self._sec != now.second:
+            self._hour = now.hour
+            self._min = now.minute
+            self._sec = now.second
         sec = self.splitDigits(now.second)
         minute = self.splitDigits(now.minute)
         h = now.hour
@@ -258,17 +274,16 @@ class BigDisplay:
             # self.logger.debug('switch timetemp display from "%s" to "%s"', old_display, self.timetemp_display)
 
         if self.timetemp_display == 'clock':
-            self.update_clock_mode()
+            self.displayTime()
         else:
             self.displayTemp()
 
     def update_clock_mode(self):
-        now = dt.now()
-        if self._hour != now.hour or self._min != now.minute or self._sec != now.second:
-            self._hour = now.hour
-            self._min = now.minute
-            self._sec = now.second
-            self.displayTime(now)
+        if self.clock_show_temp:
+            self.update_timetemp_mode()
+            return
+
+        self.displayTime()
         
     def update(self):
         if self.auto_bright:

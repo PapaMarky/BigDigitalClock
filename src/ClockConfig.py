@@ -27,6 +27,7 @@ class ClockConfig:
             'twenty_four_hour': False,
             'show_seconds': True,
             'zero_pad_hour': False,
+            'show_temp': False,
             },
         'temp': {
             'scale': 'F'
@@ -65,17 +66,40 @@ class ClockConfig:
             self.write_file()
 
     def get_clock_zero_pad_hour(self):
+        if not 'clock' in self.config:
+            self.config['clock'] = {}
+        if not 'zero_pad_hour' in self.config['clock']:
+            self.config['clock']['zero_pad_hour'] = ClockConfig.DEFAULTS['clock']['zero_pad_hour']
         return self.config['clock']['zero_pad_hour']
 
-    def set_clock_show_seconds(self, zph):
-        if isinstance(zph, bool):
+    def set_clock_show_seconds(self, show_seconds):
+        if isinstance(show_seconds, bool):
             if not 'clock' in self.config:
                 self.config['clock'] = {}
-            self.config['clock']['show_seconds'] = zph
+            self.config['clock']['show_seconds'] = show_seconds
             self.write_file()
 
     def get_clock_show_seconds(self):
+        if not 'clock' in self.config:
+            self.config['clock'] = {}
+        if not 'show_seconds' in self.config['clock']:
+            self.config['clock']['show_seconds'] = ClockConfig.DEFAULTS['clock']['show_seconds']
+
         return self.config['clock']['show_seconds']
+
+    def set_clock_show_temp(self, show_temp):
+        if isinstance(show_temp, bool):
+            if not 'clock' in self.config:
+                self.config['clock'] = {}
+            self.config['clock']['show_temp'] = show_temp
+            self.write_file()
+
+    def get_clock_show_temp(self):
+        if not 'clock' in self.config:
+            self.config['clock'] = {}
+        if not 'show_temp' in self.config['clock']:
+            self.config['clock']['show_temp'] = ClockConfig.DEFAULTS['clock']['show_temp']
+        return self.config['clock']['show_temp']
 
     def set_temp_scale(self, s):
         s = str(s).upper()
@@ -87,6 +111,10 @@ class ClockConfig:
             self.write_file()
 
     def get_temp_scale(self):
+        if not 'temp' in self.config:
+            self.config['temp'] = {}
+        if not 'scale' in self.config['temp']:
+            self.config['temp']['scale'] = ClockConfig.DEFAULTS['temp']['scale']
         return self.config['temp']['scale']
 
     def set_mode(self, m):
