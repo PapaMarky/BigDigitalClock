@@ -7,6 +7,7 @@ import ClockServer as server
 from ClockMessage import create_request
 from ClockMessage import VALID_COMMANDS
 from ClockMessage import VALID_CONFIGS
+from ClockMessage import VALID_GET_CONFIGS
 
 import logging
 import copy
@@ -91,6 +92,12 @@ class ClockControlThread(threading.Thread):
                                request['status'] = 'UNIMPLEMENTED CLOCK CONFIG'
                    else:
                        request['status'] = 'UNIMPLEMENTED CONFIG'
+               elif config in VALID_GET_CONFIGS:
+                   logger.debug('Checking GET configs');
+                   if config == 'all':
+                       c = self.config.get_all()
+                       request['value'] = c
+                       request['status'] = 'OK'
                else:
                    request['status'] = 'BAD CONFIG'
         else:

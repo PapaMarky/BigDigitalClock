@@ -37,6 +37,9 @@ class ClockConfig:
         self.config = None
         self.load_file()
 
+    def get_all(self):
+        return self.config
+
     def set_brightness(self, b):
         self.config['brightness'] = b
         logger.info('set_brightness(%s)', b)
