@@ -6,7 +6,7 @@ VALID_GET_CONFIGS = ['all']
 VALID_CLOCK_CONFIGS = ['show_seconds', 'zero_pad_hour', 'show_temp']
 VALID_TEMP_CONFIGS = ['scale']
 
-VALID_MODES = ['off', 'clock', 'timetemp']
+VALID_MODES = ['off', 'clock']
 
 def str_to_bool(s):
     if isinstance(s, int):

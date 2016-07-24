@@ -39,7 +39,6 @@ class BigDisplay:
         self.mode_handlers = {
             'clock': {'update': self.update_clock_mode, 'start': None, 'stop': None},
             'off':   { 'update': self.update_off_mode, 'start': None, 'stop': None},
-            'timetemp': {'update': self.update_timetemp_mode, 'start': self.start_timetemp_mode, 'stop': None}
             }
 
         # clock configs
