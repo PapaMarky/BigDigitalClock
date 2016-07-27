@@ -1,7 +1,13 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-    <title>Flask-SocketIO Test</title>
+    <title>Big Clock</title>
+    <link rel="stylesheet" href="http://www.w3schools.com/lib/w3.css">
+    <link rel="stylesheet" type="text/css" href="static/clock.css">
+    <script src="static/clock.js"></script>
+    <style>
+      .clocktab {display:none;}
+    </style>
     <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
     <script type="text/javascript" charset="utf-8">
@@ -91,40 +97,72 @@
     </script>
 </head>
 <body>
-    <h1>Flask-SocketIO Test</h1>
-    <p>Clock Server: <b>{{ clk_server_state }}</b></p>
-    <p>Async mode is: <b>{{ async_mode }}</b></p>
-    <p>Average ping/pong latency: <b><span id="ping-pong"></span>ms</b></p>
-    <h2>Send:</h2>
-    <form id="emit" method="POST" action='#'>
+    <div class='top'>
+      <h1>Big Clock</h1>
+    </div>
+    <ul class="w3-navbar w3-black">
+      <li><a id="ClockTab" href="#" class="tablink" onclick="openTab(event, 'Clock')">Clock</a></li>
+      <li><a id="TimerTab" href="#" class="tablink" onclick="openTab(event, 'Timer')">Timer</a></li>
+      <li><a id="StopwatchTab" href="#" class="tablink" onclick="openTab(event, 'Stopwatch')">Stopwatch</a></li>
+      <li><a id="OffTab" href="#" class="tablink" onclick="openTab(event, 'Off')">Off</a></li>
+    </ul>
+
+    <div id="Clock" class="w3-container clocktab">
+      <h2>Clock</h2>
+      <p>Clock - time clock with optional temperature display</p>
+    </div>
+
+    <div id="Timer" class="w3-container clocktab">
+      <h2>Timer</h2>
+      <p>Timer - countdown timer</p>
+    </div>
+
+    <div id="Stopwatch" class="w3-container clocktab">
+      <h2>Stopwatch</h2>
+      <p>Stopwatch - time how long something takes</p>
+    </div>
+
+    <div id="Off" class="w3-container clocktab">
+      <h2>Off</h2>
+      <p>Off - Turn the clock off.</p>
+      <h1>Flask-SocketIO Test</h1>
+      <p>Clock Server: <b>{{ clk_server_state }}</b></p>
+      <p>Async mode is: <b>{{ async_mode }}</b></p>
+      <p>Average ping/pong latency: <b><span id="ping-pong"></span>ms</b></p>
+      <h2>Send:</h2>
+      <form id="emit" method="POST" action='#'>
         <input type="text" name="emit_data" id="emit_data" placeholder="Message">
         <input type="submit" value="Echo">
-    </form>
-    <form id="broadcast" method="POST" action='#'>
+      </form>
+      <form id="broadcast" method="POST" action='#'>
         <input type="text" name="broadcast_data" id="broadcast_data" placeholder="Message">
         <input type="submit" value="Broadcast">
-    </form>
-    <form id="join" method="POST" action='#'>
+      </form>
+      <form id="join" method="POST" action='#'>
         <input type="text" name="join_room" id="join_room" placeholder="Room Name">
         <input type="submit" value="Join Room">
-    </form>
-    <form id="leave" method="POST" action='#'>
+      </form>
+      <form id="leave" method="POST" action='#'>
         <input type="text" name="leave_room" id="leave_room" placeholder="Room Name">
         <input type="submit" value="Leave Room">
-    </form>
-    <form id="send_room" method="POST" action='#'>
+      </form>
+      <form id="send_room" method="POST" action='#'>
         <input type="text" name="room_name" id="room_name" placeholder="Room Name">
         <input type="text" name="room_data" id="room_data" placeholder="Message">
         <input type="submit" value="Send to Room">
-    </form>
-    <form id="close" method="POST" action="#">
+      </form>
+      <form id="close" method="POST" action="#">
         <input type="text" name="close_room" id="close_room" placeholder="Room Name">
         <input type="submit" value="Close Room">
-    </form>
-    <form id="disconnect" method="POST" action="#">
+      </form>
+      <form id="disconnect" method="POST" action="#">
         <input type="submit" value="Disconnect">
-    </form>
-    <h2>Receive:</h2>
-    <div id="log"></div>
+      </form>
+      <h2>Receive:</h2>
+      <div id="log"></div>
+    </div>
+    <div class="brightness">
+      <h2>BRIGHTNESS CONTROL</h2>
+    </div>
 </body>
 </html>
