@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Big Clock</title>
+    <link rel="stylesheet" href="http://www.w3schools.com/lib/w3.css">
+    <link rel="stylesheet" type="text/css" href="clock.css">
+    <script src="clock.js"></script>
+    <style>
+      .clocktab {display:none;}
+    </style>
+  </head>
+  <body onload='selectTab("Clock")'>
+    <div class='top'>
+      <h1>Big Clock</h1>
+    </div>
+      <ul class="w3-navbar w3-black">
+	<li><a id="ClockTab" href="#" class="tablink" onclick="openTab(event, 'Clock')">Clock</a></li>
+	<li><a id="TimerTab" href="#" class="tablink" onclick="openTab(event, 'Timer')">Timer</a></li>
+	<li><a id="StopwatchTab" href="#" class="tablink" onclick="openTab(event, 'Stopwatch')">Stopwatch</a></li>
+	<li><a id="OffTab" href="#" class="tablink" onclick="openTab(event, 'Off')">Off</a></li>
+      </ul>
+
+      <div id="Clock" class="w3-container clocktab">
+	<h2>Clock</h2>
+	<p>Clock - time clock with optional temperature display</p>
+      </div>
+
+      <div id="Timer" class="w3-container clocktab">
+	<h2>Timer</h2>
+	<p>Timer - countdown timer</p>
+      </div>
+
+      <div id="Stopwatch" class="w3-container clocktab">
+	<h2>Stopwatch</h2>
+	<p>Stopwatch - time how long something takes</p>
+      </div>
+
+      <div id="Off" class="w3-container clocktab">
+	<h2>Off</h2>
+	<p>Off - Turn the clock off.</p>
+      </div>
+      <div class="brightness">
+	<h2>BRIGHTNESS CONTROL</h2>
+      </div>
+  </body>
+</html>

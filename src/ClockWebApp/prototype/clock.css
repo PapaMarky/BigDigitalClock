@@ -1,0 +1,35 @@
+body {
+     background-color: gray;
+     }
+.clocktab {
+//     border: 3px solid gray;
+     }
+.brightness {
+     background-color: lightblue;
+     width: 100%;
+     position: fixed;
+     bottom: 0px;
+     padding: 10px;
+     }
+.top {
+     display: block;
+     overflow: auto;
+     background-color: pink;
+     padding: 10px;
+     }
+
+.tab {
+     min-height: 100%;
+     padding: 10px;
+     margin: 0;
+     border: 3px solid white;
+     position: relative;
+     top: 0;
+     }
+.tab-one {
+     background-color: salmon;
+     }
+
+.tab-two {
+     background-color: lightblue;
+     }
