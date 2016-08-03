@@ -34,10 +34,10 @@ class ClockClient:
     def is_connected(self):
         return self.connected
 
-    def connect_to_server(self):
+    def connect_to_server(self, ipaddr='127.0.0.1', port=60969):
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sock.connect(('127.0.0.1', 60969))
+            self.sock.connect((ipaddr, port))
             self.sock.settimeout(1)
             self.connected = True
         except socket.error, e:
