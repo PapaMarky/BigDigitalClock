@@ -266,7 +266,7 @@ class ClockControlThread(threading.Thread):
             logger.error("Failed to load configuration: '%s'", config_file)
             return
 
-        HOST, PORT = 'localhost', 60969
+        HOST, PORT = '0.0.0.0', 60969
 
         logger.info("ClockControlThread Starting Server")
         try:

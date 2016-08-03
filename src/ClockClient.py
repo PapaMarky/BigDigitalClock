@@ -12,12 +12,12 @@ from ClockMessage import VALID_MODES
 class ClockClient:
     CLIENT_LIST = []
 
-    def __init__(self, name):
+    def __init__(self, name, server='127.0.0.1', port=60969):
         self.name = name
         self.logger = logging.getLogger(name + '.client')
 
         self.connected = False
-        self.connect_to_server()
+        self.connect_to_server(server, port)
 
         ClockClient.CLIENT_LIST.append(self)
         self.running = True
@@ -34,10 +34,10 @@ class ClockClient:
     def is_connected(self):
         return self.connected
 
-    def connect_to_server(self, ipaddr='127.0.0.1', port=60969):
+    def connect_to_server(self, server='127.0.0.1', port=60969):
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sock.connect((ipaddr, port))
+            self.sock.connect((server, port))
             self.sock.settimeout(1)
             self.connected = True
         except socket.error, e:

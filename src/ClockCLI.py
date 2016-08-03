@@ -69,8 +69,12 @@ def handle_message(msg):
 
 if __name__ == '__main__':
     running = True
+    server='big-clock.local'
+    if len(sys.argv) > 1 and sys.argv[1].startswith('server='):
+        server = sys.argv[1][-(len(sys.argv[1])-5):]
+
     id = "ClockCLI-{}".format(os.getpid())
-    client = c.ClockClient(id)
+    client = c.ClockClient(id, server)
     if not client.is_connected():
         print "Server Connection Failed"
 
