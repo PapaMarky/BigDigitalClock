@@ -81,7 +81,7 @@ class BigDisplay:
                 if self.light_sensor is not None:
                     self.logger.warn('light_sensor not None: "%s"', str(self.light_sensor))
                     self.light_sensor = None
-            return self.light_sensor
+        return self.light_sensor
                 
     def c_to_f(self, C):
         F = (C * 9)/5 + 32
@@ -350,6 +350,7 @@ class BigDisplay:
         # read the sensor
         sensor = self.get_light_sensor()
         if sensor is None:
+            # self.logger.debug('Sensor is NONE')
             return
         try:
             full, ir = sensor.get_full_luminosity()
