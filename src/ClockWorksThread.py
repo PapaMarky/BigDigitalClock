@@ -188,6 +188,12 @@ class ClockWorksThread(Thread):
             else:
                 logging.warn('"clock show_seconds" missing from initialization')
 
+            if 'show_temp' in c:
+                logging.info(' - show_temp: %s', str(c['show_temp']))
+                self.display.set_clock_show_temp(c['show_temp'])
+            else:
+                logging.warn('"clock show_temp" missing from initialization')
+
         request['status'] = 'OK'
 
     def handle_config_light_sensor(self, request):

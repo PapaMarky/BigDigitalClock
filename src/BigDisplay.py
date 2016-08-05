@@ -207,10 +207,14 @@ class BigDisplay:
 
     def displayTime(self):
         now = dt.now()
-        if self._hour != now.hour or self._min != now.minute or self._sec != now.second:
+
+        if self._hour != now.hour or self._min != now.minute or (self.clock_show_seconds and self._sec != now.second):
             self._hour = now.hour
             self._min = now.minute
             self._sec = now.second
+        else:
+            return
+
         sec = self.splitDigits(now.second)
         minute = self.splitDigits(now.minute)
         h = now.hour
@@ -268,6 +272,13 @@ class BigDisplay:
             if self.timetemp_display == 'clock':
                 self.timetemp_display = 'temp'
             else:
+                # The clock only refreshes the time if the time has changed. When not show_seconds is False,
+                # seconds are ignored in this comparison. When we are displaying time and tempurature but
+                # not showing seconds, we display the temperature as expected, but when returning to time 
+                # display, if the hour and minute have not changed, the display is not updated and continues
+                # to display the temperature. 
+                # By setting the remembered hour to -1, we trick the display into updating to show the time.
+                self._hour = -1
                 self.timetemp_display = 'clock'
 
             # self.logger.debug('switch timetemp display from "%s" to "%s"', old_display, self.timetemp_display)
