@@ -5,6 +5,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room, \
 import sys
 sys.path.append('/home/pi/BigDigitalClock/src')
 import ClockClient
+import json
 
 # Set this variable to "threading", "eventlet" or "gevent" to test the
 # different async modes, or leave it set to None for the application to choose
@@ -17,17 +18,29 @@ app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, async_mode=async_mode)
 thread = None
 
-
 def background_thread():
     """Example of how to send server generated events to clients."""
     count = 0
+    print "START background_thread"
     while True:
-        socketio.sleep(10)
-        count += 1
-        socketio.emit('my response',
-                      {'data': 'Server generated event', 'count': count},
-                      namespace='/test')
+        line = client.check_for_message()
 
+        if line is not None and line != '':
+            print "LINE: {}".format(line)
+            #msg = json.loads(line)
+            #m = msg['msg']
+            #value = msg['value']
+            #print "MSG: {}".format(str(msg))
+            count += 1
+            socketio.emit('my response', {'data': line, 'count': count}, namespace='/test')
+        else:
+            socketio.sleep(0.1)
+            
+        # socketio.sleep(10)
+        # count += 1
+        # socketio.emit('my response',
+        #               {'data': 'Server generated event', 'count': count},
+        #               namespace='/test')
 
 @app.route('/')
 def index():
@@ -42,6 +55,15 @@ def index():
 
     return render_template('index.html', async_mode=socketio.async_mode, clk_server_state=state)
 
+@socketio.on('get config', namespace='/test')
+def get_config():
+    session['receive_count'] = session.get('receive_count', 0) + 1
+    if client.is_connected():
+        status, msg = client.handle_request('get config')
+        if not status:
+            emit('config', msg)
+        else:
+            emit('config', msg)
 
 @socketio.on('my event', namespace='/test')
 def test_message(message):
@@ -108,7 +130,12 @@ def ping_pong():
 
 @socketio.on('connect', namespace='/test')
 def test_connect():
-    emit('my response', {'data': 'Connected', 'count': 0})
+    config = None
+    data = {'data': 'Connected', 'count': 0}
+    if client.is_connected():
+        status, msg = client.handle_request('get all')
+        data['status'] = status
+    emit('my response', data)
 
 
 @socketio.on('disconnect', namespace='/test')
