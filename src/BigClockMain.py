@@ -10,9 +10,9 @@ import threading
 
 # Set up main logging stuff
 logger = logging.getLogger('BigClock')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.ERROR)
 fh = logging.FileHandler('/var/log/BigClock.log')
-fh.setLevel(logging.DEBUG)
+fh.setLevel(logging.ERROR)
 ch = logging.StreamHandler()
 ch.setLevel(logging.ERROR)
 

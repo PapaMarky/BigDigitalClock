@@ -11,7 +11,8 @@
     <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
     <script type="text/javascript" charset="utf-8">
-        $(document).ready(function() {
+      function Setup() {
+            console.debug('SETUP');
             // Use a "/test" namespace.
             // An application can open a connection on multiple namespaces, and
             // Socket.IO will multiplex all those connections on a single
@@ -37,6 +38,23 @@
             // section of the page.
             socket.on('my response', function(msg) {
                 $('#log').append('<br>' + $('<div/>').text('Received #' + msg.count + ': ' + msg.data).html());
+	        console.debug(msg);
+            });
+            socket.on('initialize', function(msg) {
+                $('#log').append('<br>' + $('<div/>').text('INITIAL CONFIG #' + msg.count + ': ' + msg.data).html());
+	        console.debug(msg.data);
+	        m = JSON.parse(msg.data);
+	        console.debug('STATUS: ' + m.status);
+	        console.debug('  MODE: ' + m.value.mode);
+	        mode = m.value.mode;
+	        if (m.value.brightness == 'auto') {
+  	            document.getElementById('autobrightness').checked = true;
+	            document.getElementById('bright').value = 50;
+	        } else {
+  	            document.getElementById('autobrightness').checked = false;
+	            document.getElementById('bright').value = m.value.brightness;
+	        }
+	        openTab('', mode);
             });
 
             // Interval function that tests message latency by sending a "ping"
@@ -65,6 +83,13 @@
             // Handlers for the different forms in the page.
             // These accept data from the user and send it to the server in a
             // variety of ways
+            $('form#brightness').change(function(event) {
+                ab = document.getElementById('autobrightness').checked;
+                b =  document.getElementById('bright').value;
+                console.debug('BRIGHTNESS: auto: ' + ab + ', b: ' + b)
+                socket.emit('brightness', {data: {auto_brightness: ab, brightness: b}});
+                return false;
+            });
             $('form#emit').submit(function(event) {
                 socket.emit('my event', {data: $('#emit_data').val()});
                 return false;
@@ -93,36 +118,40 @@
                 socket.emit('disconnect request');
                 return false;
             });
-        });
+        }
     </script>
 </head>
-<body>
+<body onload='Setup()'>
     <div class='top'>
       <h1>Big Clock</h1>
+      <form id='brightness' method="POST" action='#'>
+	<input type='range' name='bright' id='bright' min='0' max='100' value='50' /> &nbsp;
+	<input type='checkbox' name='autobrightness' id='autobrightness' value='autobright'/> Auto-Brightness
+      </form>
     </div>
     <ul class="w3-navbar w3-black">
-      <li><a id="ClockTab" href="#" class="tablink" onclick="openTab(event, 'Clock')">Clock</a></li>
-      <li><a id="TimerTab" href="#" class="tablink" onclick="openTab(event, 'Timer')">Timer</a></li>
-      <li><a id="StopwatchTab" href="#" class="tablink" onclick="openTab(event, 'Stopwatch')">Stopwatch</a></li>
-      <li><a id="OffTab" href="#" class="tablink" onclick="openTab(event, 'Off')">Off</a></li>
+      <li><a id="clockTab" href="#" class="tablink" onclick="openTab(event, 'clock')">Clock</a></li>
+      <li><a id="timerTab" href="#" class="tablink" onclick="openTab(event, 'timer')">Timer</a></li>
+      <li><a id="stopwatchTab" href="#" class="tablink" onclick="openTab(event, 'stopwatch')">Stopwatch</a></li>
+      <li><a id="offTab" href="#" class="tablink" onclick="openTab(event, 'off')">Off</a></li>
     </ul>
 
-    <div id="Clock" class="w3-container clocktab">
+    <div id="clock" class="w3-container clocktab">
       <h2>Clock</h2>
       <p>Clock - time clock with optional temperature display</p>
     </div>
 
-    <div id="Timer" class="w3-container clocktab">
+    <div id="timer" class="w3-container clocktab">
       <h2>Timer</h2>
       <p>Timer - countdown timer</p>
     </div>
 
-    <div id="Stopwatch" class="w3-container clocktab">
+    <div id="stopwatch" class="w3-container clocktab">
       <h2>Stopwatch</h2>
       <p>Stopwatch - time how long something takes</p>
     </div>
 
-    <div id="Off" class="w3-container clocktab">
+    <div id="off" class="w3-container clocktab">
       <h2>Off</h2>
       <p>Off - Turn the clock off.</p>
       <h1>Flask-SocketIO Test</h1>
@@ -161,8 +190,10 @@
       <h2>Receive:</h2>
       <div id="log"></div>
     </div>
+    <!--
     <div class="brightness">
       <h2>BRIGHTNESS CONTROL</h2>
     </div>
+    -->
 </body>
 </html>

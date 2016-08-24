@@ -9,9 +9,9 @@ import ClockClient as c
 # Set up main logging stuff
 id = "ClockCLI-{}".format(os.getpid())
 logger = logging.getLogger(id)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.ERROR)
 fh = logging.FileHandler('/var/log/ClockCLI.log')
-fh.setLevel(logging.DEBUG)
+fh.setLevel(logging.ERROR)
 ch = logging.StreamHandler()
 ch.setLevel(logging.ERROR)
 

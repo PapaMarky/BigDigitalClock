@@ -32,7 +32,7 @@ def background_thread():
             #value = msg['value']
             #print "MSG: {}".format(str(msg))
             count += 1
-            socketio.emit('my response', {'data': line, 'count': count}, namespace='/test')
+            socketio.emit('initialize', {'data': line, 'count': count}, namespace='/test')
         else:
             socketio.sleep(0.1)
             
@@ -68,6 +68,20 @@ def get_config():
 @socketio.on('my event', namespace='/test')
 def test_message(message):
     session['receive_count'] = session.get('receive_count', 0) + 1
+    emit('my response',
+         {'data': message['data'], 'count': session['receive_count']})
+
+@socketio.on('brightness', namespace='/test')
+def brightness_message(message):
+    session['receive_count'] = session.get('receive_count', 0) + 1
+    
+    b = 'set brightness '
+    if message['data']['auto_brightness']:
+        b = b + 'auto'
+    else:
+        b = b + str(message['data']['brightness'])
+    client.handle_request(b)
+
     emit('my response',
          {'data': message['data'], 'count': session['receive_count']})
 
